@@ -69,6 +69,11 @@ export interface Config {
   collections: {
     users: User;
     media: Media;
+    proposals: Proposal;
+    materials: Material;
+    machines: Machine;
+    'internal-rates': InternalRate;
+    'project-library': ProjectLibrary;
     'payload-kv': PayloadKv;
     'payload-locked-documents': PayloadLockedDocument;
     'payload-preferences': PayloadPreference;
@@ -78,13 +83,18 @@ export interface Config {
   collectionsSelect: {
     users: UsersSelect<false> | UsersSelect<true>;
     media: MediaSelect<false> | MediaSelect<true>;
+    proposals: ProposalsSelect<false> | ProposalsSelect<true>;
+    materials: MaterialsSelect<false> | MaterialsSelect<true>;
+    machines: MachinesSelect<false> | MachinesSelect<true>;
+    'internal-rates': InternalRatesSelect<false> | InternalRatesSelect<true>;
+    'project-library': ProjectLibrarySelect<false> | ProjectLibrarySelect<true>;
     'payload-kv': PayloadKvSelect<false> | PayloadKvSelect<true>;
     'payload-locked-documents': PayloadLockedDocumentsSelect<false> | PayloadLockedDocumentsSelect<true>;
     'payload-preferences': PayloadPreferencesSelect<false> | PayloadPreferencesSelect<true>;
     'payload-migrations': PayloadMigrationsSelect<false> | PayloadMigrationsSelect<true>;
   };
   db: {
-    defaultIDType: string;
+    defaultIDType: number;
   };
   fallbackLocale: null;
   globals: {};
@@ -122,7 +132,9 @@ export interface UserAuthOperations {
  * via the `definition` "users".
  */
 export interface User {
-  id: string;
+  id: number;
+  nome: string;
+  role: 'account' | 'criativo' | 'producao' | 'admin';
   updatedAt: string;
   createdAt: string;
   email: string;
@@ -147,8 +159,8 @@ export interface User {
  * via the `definition` "media".
  */
 export interface Media {
-  id: string;
-  alt: string;
+  id: number;
+  alt?: string | null;
   updatedAt: string;
   createdAt: string;
   url?: string | null;
@@ -163,10 +175,226 @@ export interface Media {
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "proposals".
+ */
+export interface Proposal {
+  id: number;
+  /**
+   * Auto-generated: PROP-YYYY-NNN
+   */
+  numero?: string | null;
+  estado: 'Recebida' | 'EmElaboracao' | 'EmOrcamentacao' | 'Enviada' | 'Ganha' | 'Perdida';
+  motivoPerda?:
+    | ('Preco' | 'Concorrencia' | 'Prazo' | 'ProjetoCancelado' | 'ForaAmbito' | 'SemResposta' | 'Outro')
+    | null;
+  detalhePerda?: string | null;
+  nomeProjeto: string;
+  cliente: string;
+  account: number | User;
+  contactoNome?: string | null;
+  contactoEmail?: string | null;
+  contactoTelefone?: string | null;
+  prazoResposta?: string | null;
+  briefing: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  };
+  /**
+   * URL to Figma file — passed as text to the AI prompt
+   */
+  figmaLink?: string | null;
+  ficheirosAnexos?: (number | Media)[] | null;
+  memoriacriativa?: {
+    root: {
+      type: string;
+      children: {
+        type: any;
+        version: number;
+        [k: string]: unknown;
+      }[];
+      direction: ('ltr' | 'rtl') | null;
+      format: 'left' | 'start' | 'center' | 'right' | 'end' | 'justify' | '';
+      indent: number;
+      version: number;
+    };
+    [k: string]: unknown;
+  } | null;
+  estadoCriativo?: ('Rascunho' | 'EmRevisao' | 'Aprovado') | null;
+  maquetes?: (number | Media)[] | null;
+  /**
+   * Managed automatically by the AI engine
+   */
+  sessaoOrcamentacao?:
+    | {
+        sessaoId?: string | null;
+        conversaIA?:
+          | {
+              role?: ('user' | 'assistant') | null;
+              content?: string | null;
+              timestamp?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        estimativaAtual?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        abordagemTecnica?: string | null;
+        nivelConfianca?: ('Alto' | 'Medio' | 'Baixo') | null;
+        nivelConfiancaJustificacao?: string | null;
+        inputsUsados?:
+          | {
+              [k: string]: unknown;
+            }
+          | unknown[]
+          | string
+          | number
+          | boolean
+          | null;
+        id?: string | null;
+      }[]
+    | null;
+  estimativaEditada?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  valorVendaFinal?: number | null;
+  /**
+   * (Venda - Custo) / Venda × 100
+   */
+  margemCalculada?: number | null;
+  condicoesPagamento?: string | null;
+  validadeProposta?: string | null;
+  comentarios?:
+    | {
+        autor: number | User;
+        texto: string;
+        timestamp?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  /**
+   * Append-only — written by hooks only
+   */
+  activityLog?:
+    | {
+        evento?: string | null;
+        user?: (number | null) | User;
+        timestamp?: string | null;
+        id?: string | null;
+      }[]
+    | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "materials".
+ */
+export interface Material {
+  id: number;
+  nome: string;
+  referencia?: string | null;
+  /**
+   * Ex: m², m linear, un, kg
+   */
+  unidade: string;
+  custoMedio: number;
+  notas?: string | null;
+  ativo?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "machines".
+ */
+export interface Machine {
+  id: number;
+  nome: string;
+  /**
+   * Ex: Impressão, Corte, Fresagem
+   */
+  tipo?: string | null;
+  descricao?: string | null;
+  disponivel?: boolean | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "internal-rates".
+ */
+export interface InternalRate {
+  id: number;
+  /**
+   * Ex: Montador, Designer, Técnico de Impressão
+   */
+  perfil: string;
+  /**
+   * Ex: Produção, Criativo, Comercial
+   */
+  departamento: string;
+  custoHora: number;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "project-library".
+ */
+export interface ProjectLibrary {
+  id: number;
+  nome: string;
+  /**
+   * Ex: Stand, Sinalética, Totem, Instalação
+   */
+  tipo?: string | null;
+  ano?: number | null;
+  descricao?: string | null;
+  /**
+   * JSON with items and rubricas — used as AI benchmarking reference
+   */
+  estruturaCustos?:
+    | {
+        [k: string]: unknown;
+      }
+    | unknown[]
+    | string
+    | number
+    | boolean
+    | null;
+  notas?: string | null;
+  updatedAt: string;
+  createdAt: string;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
  * via the `definition` "payload-kv".
  */
 export interface PayloadKv {
-  id: string;
+  id: number;
   key: string;
   data:
     | {
@@ -183,20 +411,40 @@ export interface PayloadKv {
  * via the `definition` "payload-locked-documents".
  */
 export interface PayloadLockedDocument {
-  id: string;
+  id: number;
   document?:
     | ({
         relationTo: 'users';
-        value: string | User;
+        value: number | User;
       } | null)
     | ({
         relationTo: 'media';
-        value: string | Media;
+        value: number | Media;
+      } | null)
+    | ({
+        relationTo: 'proposals';
+        value: number | Proposal;
+      } | null)
+    | ({
+        relationTo: 'materials';
+        value: number | Material;
+      } | null)
+    | ({
+        relationTo: 'machines';
+        value: number | Machine;
+      } | null)
+    | ({
+        relationTo: 'internal-rates';
+        value: number | InternalRate;
+      } | null)
+    | ({
+        relationTo: 'project-library';
+        value: number | ProjectLibrary;
       } | null);
   globalSlug?: string | null;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   updatedAt: string;
   createdAt: string;
@@ -206,10 +454,10 @@ export interface PayloadLockedDocument {
  * via the `definition` "payload-preferences".
  */
 export interface PayloadPreference {
-  id: string;
+  id: number;
   user: {
     relationTo: 'users';
-    value: string | User;
+    value: number | User;
   };
   key?: string | null;
   value?:
@@ -229,7 +477,7 @@ export interface PayloadPreference {
  * via the `definition` "payload-migrations".
  */
 export interface PayloadMigration {
-  id: string;
+  id: number;
   name?: string | null;
   batch?: number | null;
   updatedAt: string;
@@ -240,6 +488,8 @@ export interface PayloadMigration {
  * via the `definition` "users_select".
  */
 export interface UsersSelect<T extends boolean = true> {
+  nome?: T;
+  role?: T;
   updatedAt?: T;
   createdAt?: T;
   email?: T;
@@ -274,6 +524,122 @@ export interface MediaSelect<T extends boolean = true> {
   height?: T;
   focalX?: T;
   focalY?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "proposals_select".
+ */
+export interface ProposalsSelect<T extends boolean = true> {
+  numero?: T;
+  estado?: T;
+  motivoPerda?: T;
+  detalhePerda?: T;
+  nomeProjeto?: T;
+  cliente?: T;
+  account?: T;
+  contactoNome?: T;
+  contactoEmail?: T;
+  contactoTelefone?: T;
+  prazoResposta?: T;
+  briefing?: T;
+  figmaLink?: T;
+  ficheirosAnexos?: T;
+  memoriacriativa?: T;
+  estadoCriativo?: T;
+  maquetes?: T;
+  sessaoOrcamentacao?:
+    | T
+    | {
+        sessaoId?: T;
+        conversaIA?:
+          | T
+          | {
+              role?: T;
+              content?: T;
+              timestamp?: T;
+              id?: T;
+            };
+        estimativaAtual?: T;
+        abordagemTecnica?: T;
+        nivelConfianca?: T;
+        nivelConfiancaJustificacao?: T;
+        inputsUsados?: T;
+        id?: T;
+      };
+  estimativaEditada?: T;
+  valorVendaFinal?: T;
+  margemCalculada?: T;
+  condicoesPagamento?: T;
+  validadeProposta?: T;
+  comentarios?:
+    | T
+    | {
+        autor?: T;
+        texto?: T;
+        timestamp?: T;
+        id?: T;
+      };
+  activityLog?:
+    | T
+    | {
+        evento?: T;
+        user?: T;
+        timestamp?: T;
+        id?: T;
+      };
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "materials_select".
+ */
+export interface MaterialsSelect<T extends boolean = true> {
+  nome?: T;
+  referencia?: T;
+  unidade?: T;
+  custoMedio?: T;
+  notas?: T;
+  ativo?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "machines_select".
+ */
+export interface MachinesSelect<T extends boolean = true> {
+  nome?: T;
+  tipo?: T;
+  descricao?: T;
+  disponivel?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "internal-rates_select".
+ */
+export interface InternalRatesSelect<T extends boolean = true> {
+  perfil?: T;
+  departamento?: T;
+  custoHora?: T;
+  updatedAt?: T;
+  createdAt?: T;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "project-library_select".
+ */
+export interface ProjectLibrarySelect<T extends boolean = true> {
+  nome?: T;
+  tipo?: T;
+  ano?: T;
+  descricao?: T;
+  estruturaCustos?: T;
+  notas?: T;
+  updatedAt?: T;
+  createdAt?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema
