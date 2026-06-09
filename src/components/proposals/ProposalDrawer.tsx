@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge'
 import { StateSelector } from './StateSelector'
 import { TabDadosBase } from './tabs/TabDadosBase'
 import { TabCriativa } from './tabs/TabCriativa'
+import { TabOrcamentacao } from './tabs/TabOrcamentacao'
 import { TabColaboracao } from './tabs/TabColaboracao'
 import type { Proposal } from '@/payload-types'
 
@@ -55,11 +56,7 @@ export function ProposalDrawer({ proposal, onTabChange, defaultTab = 'dados' }: 
         </TabsContent>
 
         <TabsContent value="orcamentacao">
-          <div className="py-4 text-sm text-muted-foreground">
-            {proposal.estado === 'EmOrcamentacao' || proposal.estado === 'Enviada' || proposal.estado === 'Ganha' || proposal.estado === 'Perdida'
-              ? 'Orçamentação disponível após implementação do Prompt 10.'
-              : 'A proposta ainda não está em estado de orçamentação.'}
-          </div>
+          <TabOrcamentacao proposal={proposal} />
         </TabsContent>
 
         <TabsContent value="colaboracao">
