@@ -19,16 +19,42 @@ Atlassian: https://innovagency.atlassian.net/wiki/spaces/IPN/pages/1396080641/Te
 
 ---
 
+## Branch structure
+
+```
+main          — docs only: .gitignore, CLAUDE.md, PROMPTS.md. Never contains code.
+dev           — integration branch. All feature branches are merged here.
+feature/...   — one branch per prompt. Created from dev, merged back into dev when complete.
+```
+
+Branch naming: `feature/prompt-XX-short-description`
+Examples:
+- `feature/prompt-01-scaffold`
+- `feature/prompt-02-collections`
+- `feature/prompt-03-beforechange-hooks`
+
 ## Git rule — automatic after every change
 
-After every prompt is successfully implemented, without exception, commit and push to the repository.
+After every prompt is successfully implemented, without exception, commit and push to the feature branch.
 Do this automatically — do not wait to be asked.
 
 Required sequence after each completed step:
+
 ```
+# At the start of each prompt — create feature branch from dev
+git checkout dev
+git pull origin dev
+git checkout -b feature/prompt-XX-short-description
+
+# After implementation is complete — commit and push feature branch
 git add .
 git commit -m "[Prompt XX] brief description of what was implemented"
-git push origin main
+git push origin feature/prompt-XX-short-description
+
+# Merge into dev
+git checkout dev
+git merge feature/prompt-XX-short-description
+git push origin dev
 ```
 
 Commit message examples:
@@ -38,6 +64,7 @@ Commit message examples:
 - "[Prompt 05] AI library — Claude client, GPT-4o Vision, buildPrompt"
 
 Never accumulate changes from multiple prompts in a single commit.
+Never push code to main — main is docs only.
 Never push without the current step's checks passing.
 The .env.local file must never go to the repository — confirm it is in .gitignore before the first push.
 
