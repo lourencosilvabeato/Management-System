@@ -10,11 +10,14 @@ import {
 } from '../lib/access'
 import { generateProposalNumber } from '../hooks/beforeChange/generateProposalNumber'
 import { validateTransition } from '../hooks/beforeChange/validateTransition'
+import { logActivity } from '../hooks/afterChange/logActivity'
+import { generateEstimate } from '../hooks/afterChange/generateEstimate'
 
 export const Proposals: CollectionConfig = {
   slug: 'proposals',
   hooks: {
     beforeChange: [generateProposalNumber, validateTransition],
+    afterChange: [logActivity, generateEstimate],
   },
   admin: {
     useAsTitle: 'nomeProjeto',
