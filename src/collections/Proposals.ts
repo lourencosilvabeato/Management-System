@@ -8,9 +8,14 @@ import {
   budgetingZoneWrite,
   neverWrite,
 } from '../lib/access'
+import { generateProposalNumber } from '../hooks/beforeChange/generateProposalNumber'
+import { validateTransition } from '../hooks/beforeChange/validateTransition'
 
 export const Proposals: CollectionConfig = {
   slug: 'proposals',
+  hooks: {
+    beforeChange: [generateProposalNumber, validateTransition],
+  },
   admin: {
     useAsTitle: 'nomeProjeto',
     defaultColumns: ['numero', 'nomeProjeto', 'cliente', 'estado', 'createdAt'],
