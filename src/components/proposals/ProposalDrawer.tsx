@@ -4,7 +4,6 @@ import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Badge } from '@/components/ui/badge'
 import { Skeleton } from '@/components/ui/skeleton'
-import { SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet'
 import { StateSelector } from './StateSelector'
 import { TabDadosBase } from './tabs/TabDadosBase'
 import { TabCriativa } from './tabs/TabCriativa'
@@ -22,12 +21,12 @@ const ESTADO_LABELS: Record<string, string> = {
 }
 
 const ESTADO_CLASSES: Record<string, string> = {
-  Recebida:       'bg-slate-800/60   text-slate-300   border-slate-600/60',
-  EmElaboracao:   'bg-blue-900/50    text-blue-300    border-blue-600/50',
-  EmOrcamentacao: 'bg-violet-900/50  text-violet-300  border-violet-600/50',
-  Enviada:        'bg-amber-900/50   text-amber-300   border-amber-600/50',
-  Ganha:          'bg-emerald-900/50 text-emerald-300 border-emerald-600/50',
-  Perdida:        'bg-rose-900/50    text-rose-300    border-rose-600/50',
+  Recebida:       'bg-stone-800/60    text-stone-300   border-stone-600/50',
+  EmElaboracao:   'bg-sky-900/50      text-sky-300     border-sky-700/50',
+  EmOrcamentacao: 'bg-orange-950/60   text-orange-300  border-orange-700/50',
+  Enviada:        'bg-amber-900/50    text-amber-300   border-amber-700/50',
+  Ganha:          'bg-emerald-900/50  text-emerald-300 border-emerald-700/50',
+  Perdida:        'bg-rose-900/50     text-rose-300    border-rose-700/50',
 }
 
 export interface CurrentUser {
@@ -71,75 +70,97 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
   const canSeeBudgeting = ['account', 'producao', 'admin'].includes(currentUser.role)
 
   const formatDate = (d?: string | null) =>
-    d
-      ? new Date(d).toLocaleDateString('pt-PT', {
-          day: '2-digit',
-          month: '2-digit',
-          year: 'numeric',
-        })
-      : '—'
+    d ? new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
 
   const accountName =
-    typeof proposal?.account === 'object' &&
-    proposal.account !== null &&
-    'nome' in proposal.account
+    typeof proposal?.account === 'object' && proposal.account !== null && 'nome' in proposal.account
       ? (proposal.account as { nome?: string | null }).nome ?? '—'
       : '—'
 
   if (isLoading) {
     return (
-      <div className="p-6 space-y-4">
-        <Skeleton className="h-6 w-48" />
-        <Skeleton className="h-4 w-32" />
-        <Skeleton className="h-4 w-64" />
-        <Skeleton className="h-32 w-full mt-4" />
+      <div className="p-8 space-y-4">
+        <Skeleton className="h-5 w-32" />
+        <Skeleton className="h-7 w-64" />
+        <Skeleton className="h-4 w-48" />
+        <Skeleton className="h-40 w-full mt-6" />
       </div>
     )
   }
 
   if (!proposal) {
     return (
-      <div className="p-6 text-sm text-muted-foreground">Proposta não encontrada.</div>
+      <div className="p-8 text-sm text-muted-foreground">Proposta não encontrada.</div>
     )
   }
 
   return (
     <div className="flex flex-col h-full">
-      <SheetHeader className="px-6 pt-6 pb-4 border-b border-white/[0.06] shrink-0">
-        <div className="flex items-start justify-between gap-2">
-          <div className="space-y-1 min-w-0">
+      {/* ── Header ─────────────────────────────────────── */}
+      <div className="px-8 pt-7 pb-5 border-b border-white/[0.06] shrink-0">
+        <div className="flex items-start gap-3 min-w-0">
+          <div className="min-w-0 flex-1 space-y-2">
+            {/* Number + badge */}
             <div className="flex items-center gap-2 flex-wrap">
-              <span className="text-xs font-mono text-muted-foreground">{proposal.numero}</span>
-              <Badge
-                variant="outline"
-                className={ESTADO_CLASSES[proposal.estado ?? ''] ?? ''}
+              <span
+                className="text-xs font-mono px-2 py-0.5 rounded"
+                style={{
+                  background: 'oklch(0.18 0.010 48)',
+                  color: 'oklch(0.70 0.21 40)',
+                  border: '1px solid oklch(0.70 0.21 40 / 25%)',
+                }}
               >
+                {proposal.numero}
+              </span>
+              <Badge variant="outline" className={ESTADO_CLASSES[proposal.estado ?? ''] ?? ''}>
                 {ESTADO_LABELS[proposal.estado ?? ''] ?? proposal.estado}
               </Badge>
             </div>
-            <SheetTitle className="text-lg leading-tight">{proposal.nomeProjeto}</SheetTitle>
-            <SheetDescription className="text-sm">
-              {proposal.cliente} · {accountName} · Criado em {formatDate(proposal.createdAt)}
-            </SheetDescription>
+
+            {/* Title */}
+            <h2 className="text-xl font-bold leading-tight truncate pr-8">
+              {proposal.nomeProjeto}
+            </h2>
+
+            {/* Meta */}
+            <p className="text-sm text-muted-foreground">
+              <span className="text-foreground/70">{proposal.cliente}</span>
+              <span className="mx-2 opacity-30">·</span>
+              {accountName}
+              <span className="mx-2 opacity-30">·</span>
+              {formatDate(proposal.createdAt)}
+            </p>
           </div>
         </div>
-        <div className="pt-2">
+
+        {/* State transitions */}
+        <div className="mt-4">
           <StateSelector proposal={proposal} onSuccess={handleRefresh} />
         </div>
-      </SheetHeader>
+      </div>
 
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
-        <Tabs defaultValue="dados" className="mt-4">
-          <TabsList className="w-full justify-start">
-            <TabsTrigger value="dados">Dados Base</TabsTrigger>
-            <TabsTrigger value="criativa">Criativa</TabsTrigger>
-            {canSeeBudgeting && (
-              <TabsTrigger value="orcamentacao">Orçamentação</TabsTrigger>
-            )}
-            <TabsTrigger value="colaboracao">Colaboração</TabsTrigger>
+      {/* ── Tabs ───────────────────────────────────────── */}
+      <div className="flex-1 overflow-y-auto px-8 pb-8">
+        <Tabs defaultValue="dados" className="mt-5">
+          <TabsList className="w-full justify-start gap-1 bg-transparent p-0 border-b border-white/[0.06] rounded-none h-auto pb-0">
+            {[
+              { value: 'dados', label: 'Dados Base' },
+              { value: 'criativa', label: 'Criativa' },
+              ...(canSeeBudgeting ? [{ value: 'orcamentacao', label: 'Orçamentação' }] : []),
+              { value: 'colaboracao', label: 'Colaboração' },
+            ].map((tab) => (
+              <TabsTrigger
+                key={tab.value}
+                value={tab.value}
+                className="rounded-none border-b-2 border-transparent pb-3 px-1 mr-4 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:border-orange-500 data-[state=active]:text-foreground data-[state=active]:bg-transparent hover:text-foreground"
+                style={{ background: 'transparent' }}
+              >
+                {tab.label}
+              </TabsTrigger>
+            ))}
           </TabsList>
 
-          <TabsContent value="dados">
+          <TabsContent value="dados" className="mt-6">
             <TabDadosBase
               proposal={proposal}
               currentUser={currentUser}
@@ -148,7 +169,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
             />
           </TabsContent>
 
-          <TabsContent value="criativa">
+          <TabsContent value="criativa" className="mt-6">
             <TabCriativa
               proposal={proposal}
               currentUser={currentUser}
@@ -157,12 +178,12 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
           </TabsContent>
 
           {canSeeBudgeting && (
-            <TabsContent value="orcamentacao">
+            <TabsContent value="orcamentacao" className="mt-6">
               <TabOrcamentacao proposal={proposal} onRefresh={handleRefresh} />
             </TabsContent>
           )}
 
-          <TabsContent value="colaboracao">
+          <TabsContent value="colaboracao" className="mt-6">
             <TabColaboracao
               proposal={proposal}
               currentUser={currentUser}

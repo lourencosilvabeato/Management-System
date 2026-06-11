@@ -11,60 +11,62 @@ interface KPI {
   label: string
   value: string | number
   icon: React.ReactNode
-  accent: string
+  color: string
   glow: string
+  border: string
 }
 
 export function ProposalKPIs({ proposals }: Props) {
   const now = new Date()
   const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const activeProposals = proposals.filter(
-    (p) => !['Ganha', 'Perdida'].includes(p.estado ?? ''),
-  )
+  const active = proposals.filter((p) => !['Ganha', 'Perdida'].includes(p.estado ?? ''))
 
-  const totalPipeline = activeProposals.reduce(
-    (sum, p) => sum + (typeof p.valorVendaFinal === 'number' ? p.valorVendaFinal : 0),
+  const pipeline = active.reduce(
+    (s, p) => s + (typeof p.valorVendaFinal === 'number' ? p.valorVendaFinal : 0),
     0,
   )
 
-  const wonThisMonth = proposals.filter(
+  const wonMonth = proposals.filter(
     (p) => p.estado === 'Ganha' && p.updatedAt >= startOfMonth,
   ).length
 
-  const inEnviada = proposals.filter((p) => p.estado === 'Enviada').length
+  const enviada = proposals.filter((p) => p.estado === 'Enviada').length
 
   const kpis: KPI[] = [
     {
       label: 'Propostas activas',
-      value: activeProposals.length,
+      value: active.length,
       icon: <Activity className="w-4 h-4" />,
-      accent: 'text-indigo-400',
-      glow: 'rgba(99,102,241,0.18)',
+      color: 'oklch(0.70 0.21 40)',
+      glow: 'rgba(249,115,22,0.20)',
+      border: 'rgba(249,115,22,0.18)',
     },
     {
       label: 'Pipeline total',
-      value:
-        totalPipeline > 0
-          ? `${totalPipeline.toLocaleString('pt-PT', { minimumFractionDigits: 0 })}€`
-          : '—',
+      value: pipeline > 0
+        ? `${pipeline.toLocaleString('pt-PT', { minimumFractionDigits: 0 })}€`
+        : '—',
       icon: <TrendingUp className="w-4 h-4" />,
-      accent: 'text-violet-400',
-      glow: 'rgba(139,92,246,0.18)',
+      color: 'oklch(0.74 0.175 58)',
+      glow: 'rgba(245,158,11,0.18)',
+      border: 'rgba(245,158,11,0.16)',
     },
     {
       label: 'Ganhas este mês',
-      value: wonThisMonth,
+      value: wonMonth,
       icon: <Trophy className="w-4 h-4" />,
-      accent: 'text-emerald-400',
+      color: 'oklch(0.72 0.165 145)',
       glow: 'rgba(52,211,153,0.15)',
+      border: 'rgba(52,211,153,0.14)',
     },
     {
       label: 'Em Enviada',
-      value: inEnviada,
+      value: enviada,
       icon: <Send className="w-4 h-4" />,
-      accent: 'text-amber-400',
-      glow: 'rgba(251,191,36,0.15)',
+      color: 'oklch(0.70 0.21 40)',
+      glow: 'rgba(249,115,22,0.15)',
+      border: 'rgba(249,115,22,0.14)',
     },
   ]
 
@@ -73,20 +75,27 @@ export function ProposalKPIs({ proposals }: Props) {
       {kpis.map((kpi) => (
         <div
           key={kpi.label}
-          className="glass rounded-xl px-4 py-3 flex flex-col gap-2 group transition-all duration-300 hover:scale-[1.02]"
-          style={{ boxShadow: `0 0 0 0 ${kpi.glow}`, transition: 'box-shadow 0.3s, transform 0.3s' }}
+          className="glass rounded-xl px-4 py-3 flex flex-col gap-2 cursor-default select-none"
+          style={{
+            border: `1px solid ${kpi.border}`,
+            transition: 'box-shadow 0.25s, transform 0.2s',
+          }}
           onMouseEnter={(e) => {
-            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 24px 2px ${kpi.glow}, 0 8px 32px rgba(0,0,0,0.4)`
+            const el = e.currentTarget as HTMLDivElement
+            el.style.boxShadow = `0 0 22px 2px ${kpi.glow}, 0 8px 32px rgba(0,0,0,0.45)`
+            el.style.transform = 'translateY(-2px)'
           }}
           onMouseLeave={(e) => {
-            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 32px rgba(0,0,0,0.4)`
+            const el = e.currentTarget as HTMLDivElement
+            el.style.boxShadow = ''
+            el.style.transform = ''
           }}
         >
-          <div className={`flex items-center gap-1.5 ${kpi.accent}`}>
+          <div className="flex items-center gap-1.5" style={{ color: kpi.color }}>
             {kpi.icon}
             <span className="text-xs font-medium text-muted-foreground">{kpi.label}</span>
           </div>
-          <span className="text-2xl font-bold tracking-tight text-foreground">{kpi.value}</span>
+          <span className="text-2xl font-bold tracking-tight">{kpi.value}</span>
         </div>
       ))}
     </div>

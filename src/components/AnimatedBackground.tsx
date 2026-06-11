@@ -2,110 +2,179 @@
 
 import { useEffect, useRef } from 'react'
 
+interface Particle {
+  x: number
+  y: number
+  vx: number
+  vy: number
+  radius: number
+  opacity: number
+}
+
+const PARTICLE_COUNT = 72
+const MAX_DIST = 140
+const BASE_SPEED = 0.32
+const MOUSE_RADIUS = 180
+const MOUSE_FORCE = 0.005
+
 export function AnimatedBackground() {
-  const wrap1 = useRef<HTMLDivElement>(null)
-  const wrap2 = useRef<HTMLDivElement>(null)
+  const canvasRef = useRef<HTMLCanvasElement>(null)
+  const mouse = useRef({ x: -9999, y: -9999 })
+  const particles = useRef<Particle[]>([])
+  const raf = useRef<number>(0)
+  const paused = useRef(false)
 
   useEffect(() => {
-    let ticking = false
-    const onMove = (e: MouseEvent) => {
-      if (ticking) return
-      ticking = true
-      requestAnimationFrame(() => {
-        const x = (e.clientX / window.innerWidth - 0.5) * 2
-        const y = (e.clientY / window.innerHeight - 0.5) * 2
-        if (wrap1.current) {
-          wrap1.current.style.setProperty('--px', `${x * 45}px`)
-          wrap1.current.style.setProperty('--py', `${y * 35}px`)
-        }
-        if (wrap2.current) {
-          wrap2.current.style.setProperty('--px', `${-x * 30}px`)
-          wrap2.current.style.setProperty('--py', `${-y * 25}px`)
-        }
-        ticking = false
+    const canvas = canvasRef.current
+    if (!canvas) return
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+
+    const resize = () => {
+      canvas.width = window.innerWidth
+      canvas.height = window.innerHeight
+      // Re-scatter particles within new bounds
+      particles.current.forEach((p) => {
+        p.x = Math.min(p.x, canvas.width)
+        p.y = Math.min(p.y, canvas.height)
       })
     }
+
+    const initParticles = () => {
+      particles.current = Array.from({ length: PARTICLE_COUNT }, () => ({
+        x: Math.random() * window.innerWidth,
+        y: Math.random() * window.innerHeight,
+        vx: (Math.random() - 0.5) * BASE_SPEED * 2,
+        vy: (Math.random() - 0.5) * BASE_SPEED * 2,
+        radius: Math.random() * 1.4 + 0.7,
+        opacity: Math.random() * 0.35 + 0.25,
+      }))
+    }
+
+    resize()
+    initParticles()
+    window.addEventListener('resize', resize, { passive: true })
+
+    const onMove = (e: MouseEvent) => {
+      mouse.current = { x: e.clientX, y: e.clientY }
+    }
     window.addEventListener('mousemove', onMove, { passive: true })
-    return () => window.removeEventListener('mousemove', onMove)
+
+    const onVisibility = () => {
+      paused.current = document.hidden
+    }
+    document.addEventListener('visibilitychange', onVisibility)
+
+    const draw = () => {
+      raf.current = requestAnimationFrame(draw)
+      if (paused.current) return
+
+      const w = canvas.width
+      const h = canvas.height
+      ctx.clearRect(0, 0, w, h)
+
+      const pts = particles.current
+      const mx = mouse.current.x
+      const my = mouse.current.y
+
+      // Update
+      for (const p of pts) {
+        const dx = mx - p.x
+        const dy = my - p.y
+        const d = Math.hypot(dx, dy)
+
+        if (d < MOUSE_RADIUS && d > 0) {
+          p.vx += (dx / d) * MOUSE_FORCE
+          p.vy += (dy / d) * MOUSE_FORCE
+        }
+
+        const spd = Math.hypot(p.vx, p.vy)
+        const maxSpd = BASE_SPEED * 2.2
+        if (spd > maxSpd) {
+          p.vx = (p.vx / spd) * maxSpd
+          p.vy = (p.vy / spd) * maxSpd
+        }
+
+        p.x += p.vx
+        p.y += p.vy
+
+        if (p.x < 0) { p.x = 0; p.vx *= -1 }
+        if (p.x > w) { p.x = w; p.vx *= -1 }
+        if (p.y < 0) { p.y = 0; p.vy *= -1 }
+        if (p.y > h) { p.y = h; p.vy *= -1 }
+      }
+
+      // Connections
+      for (let i = 0; i < pts.length; i++) {
+        for (let j = i + 1; j < pts.length; j++) {
+          const a = pts[i]
+          const b = pts[j]
+          const dist = Math.hypot(a.x - b.x, a.y - b.y)
+          if (dist < MAX_DIST) {
+            const alpha = (1 - dist / MAX_DIST) * 0.22
+            ctx.beginPath()
+            ctx.moveTo(a.x, a.y)
+            ctx.lineTo(b.x, b.y)
+            ctx.strokeStyle = `rgba(249,115,22,${alpha})`
+            ctx.lineWidth = 0.7
+            ctx.stroke()
+          }
+        }
+      }
+
+      // Nodes
+      for (const p of pts) {
+        const nearMouse = Math.hypot(mx - p.x, my - p.y)
+        const highlight = nearMouse < 100 ? (1 - nearMouse / 100) * 0.9 : 0
+
+        // Outer glow
+        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 4)
+        grd.addColorStop(0, `rgba(249,115,22,${(p.opacity + highlight * 0.4) * 0.4})`)
+        grd.addColorStop(1, 'rgba(249,115,22,0)')
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.radius * 4, 0, Math.PI * 2)
+        ctx.fillStyle = grd
+        ctx.fill()
+
+        // Core dot
+        ctx.beginPath()
+        ctx.arc(p.x, p.y, p.radius + highlight * 0.8, 0, Math.PI * 2)
+        ctx.fillStyle = highlight > 0.2
+          ? `rgba(251,191,36,${p.opacity + highlight * 0.6})`
+          : `rgba(251,146,60,${p.opacity})`
+        ctx.fill()
+      }
+    }
+
+    raf.current = requestAnimationFrame(draw)
+
+    return () => {
+      cancelAnimationFrame(raf.current)
+      window.removeEventListener('resize', resize)
+      window.removeEventListener('mousemove', onMove)
+      document.removeEventListener('visibilitychange', onVisibility)
+    }
   }, [])
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-      {/* Dot grid */}
+      {/* Warm gradient base */}
       <div
         className="absolute inset-0"
         style={{
-          backgroundImage: 'radial-gradient(circle, rgba(148,163,184,0.12) 1px, transparent 1px)',
-          backgroundSize: '28px 28px',
+          background: [
+            'radial-gradient(ellipse 80% 60% at 15% 15%, rgba(194,65,12,0.13) 0%, transparent 60%)',
+            'radial-gradient(ellipse 60% 50% at 85% 85%, rgba(146,64,14,0.10) 0%, transparent 55%)',
+          ].join(', '),
         }}
       />
-
-      {/* Blob 1 — indigo, mouse-tracked */}
+      <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
+      {/* Edge vignette */}
       <div
-        ref={wrap1}
-        className="absolute"
-        style={{
-          left: '28%',
-          top: '38%',
-          translate: 'var(--px, 0) var(--py, 0)',
-          transition: 'translate 0.9s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        }}
-      >
-        <div
-          className="w-[780px] h-[580px] rounded-full"
-          style={{
-            transform: 'translate(-50%, -50%)',
-            background:
-              'radial-gradient(ellipse at center, rgba(99,102,241,0.38) 0%, rgba(99,102,241,0.14) 45%, transparent 70%)',
-            filter: 'blur(64px)',
-            animation: 'aurora-1 11s ease-in-out infinite',
-          }}
-        />
-      </div>
-
-      {/* Blob 2 — violet, mouse-tracked */}
-      <div
-        ref={wrap2}
-        className="absolute"
-        style={{
-          left: '72%',
-          top: '28%',
-          translate: 'var(--px, 0) var(--py, 0)',
-          transition: 'translate 0.7s cubic-bezier(0.25, 0.46, 0.45, 0.94)',
-        }}
-      >
-        <div
-          className="w-[600px] h-[500px] rounded-full"
-          style={{
-            transform: 'translate(-50%, -50%)',
-            background:
-              'radial-gradient(ellipse at center, rgba(139,92,246,0.32) 0%, rgba(139,92,246,0.10) 45%, transparent 70%)',
-            filter: 'blur(80px)',
-            animation: 'aurora-2 14s ease-in-out infinite',
-          }}
-        />
-      </div>
-
-      {/* Blob 3 — cyan, CSS-only drift */}
-      <div
-        className="absolute w-[550px] h-[420px] rounded-full"
-        style={{
-          left: '52%',
-          top: '78%',
-          transform: 'translate(-50%, -50%)',
-          background:
-            'radial-gradient(ellipse at center, rgba(6,182,212,0.22) 0%, rgba(6,182,212,0.07) 45%, transparent 70%)',
-          filter: 'blur(90px)',
-          animation: 'aurora-3 17s ease-in-out infinite',
-        }}
-      />
-
-      {/* Subtle vignette to frame the content */}
-      <div
-        className="absolute inset-0"
+        className="absolute inset-0 pointer-events-none"
         style={{
           background:
-            'radial-gradient(ellipse at 50% 0%, transparent 50%, oklch(0.082 0.018 265 / 70%) 100%)',
+            'radial-gradient(ellipse 90% 90% at 50% 50%, transparent 45%, rgba(11,9,8,0.75) 100%)',
         }}
       />
     </div>

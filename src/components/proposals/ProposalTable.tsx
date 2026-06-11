@@ -13,7 +13,6 @@ import {
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Skeleton } from '@/components/ui/skeleton'
-import { Sheet, SheetContent } from '@/components/ui/sheet'
 import {
   Dialog,
   DialogContent,
@@ -40,12 +39,12 @@ const ESTADO_LABELS: Record<string, string> = {
 }
 
 const ESTADO_CLASSES: Record<string, string> = {
-  Recebida:       'bg-slate-800/60   text-slate-300   border-slate-600/60',
-  EmElaboracao:   'bg-blue-900/50    text-blue-300    border-blue-600/50',
-  EmOrcamentacao: 'bg-violet-900/50  text-violet-300  border-violet-600/50',
-  Enviada:        'bg-amber-900/50   text-amber-300   border-amber-600/50',
-  Ganha:          'bg-emerald-900/50 text-emerald-300 border-emerald-600/50',
-  Perdida:        'bg-rose-900/50    text-rose-300    border-rose-600/50',
+  Recebida:       'bg-stone-800/60    text-stone-300   border-stone-600/50',
+  EmElaboracao:   'bg-sky-900/50      text-sky-300     border-sky-700/50',
+  EmOrcamentacao: 'bg-orange-950/60   text-orange-300  border-orange-700/50',
+  Enviada:        'bg-amber-900/50    text-amber-300   border-amber-700/50',
+  Ganha:          'bg-emerald-900/50  text-emerald-300 border-emerald-700/50',
+  Perdida:        'bg-rose-900/50     text-rose-300    border-rose-700/50',
 }
 
 type SortCol = 'numero' | 'nomeProjeto' | 'cliente' | 'account' | 'createdAt' | 'valorVendaFinal' | 'estado'
@@ -231,11 +230,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
         {canCreate && (
           <Button
             onClick={() => setNewDialogOpen(true)}
-            className="shrink-0 h-10 px-4 font-semibold text-sm"
-            style={{
-              background: 'linear-gradient(135deg, oklch(0.62 0.22 265), oklch(0.65 0.20 305))',
-              boxShadow: '0 0 20px rgba(99,102,241,0.3)',
-            }}
+            className="btn-orange shrink-0 h-10 px-4 font-semibold text-sm text-white border-0"
           >
             + Nova Proposta
           </Button>
@@ -330,12 +325,9 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
         </Table>
       </div>
 
-      {/* Drawer */}
-      <Sheet open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-        <SheetContent
-          side="right"
-          className="w-[680px] sm:max-w-none overflow-y-auto p-0 glass border-l border-white/[0.08]"
-        >
+      {/* Proposal detail modal */}
+      <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
+        <DialogContent className="max-w-5xl w-[92vw] h-[88vh] p-0 overflow-hidden glass border-white/[0.08]">
           {selectedId && (
             <ProposalDrawer
               id={selectedId}
@@ -344,8 +336,8 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
               onRefreshList={handleRefreshList}
             />
           )}
-        </SheetContent>
-      </Sheet>
+        </DialogContent>
+      </Dialog>
 
       {/* New Proposal Dialog */}
       <Dialog open={newDialogOpen} onOpenChange={(open) => { if (!open) { setNewDialogOpen(false); setCreateError('') } }}>
