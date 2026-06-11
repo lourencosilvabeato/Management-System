@@ -8,26 +8,39 @@ interface Props {
 }
 
 export function ProposalKPIs({ proposals }: Props) {
-  const total = proposals.length
-  const abertas = proposals.filter((p) =>
-    ['Recebida', 'EmElaboracao', 'EmOrcamentacao', 'Enviada'].includes(p.estado ?? ''),
-  ).length
-  const ganhas = proposals.filter((p) => p.estado === 'Ganha').length
-  const perdidas = proposals.filter((p) => p.estado === 'Perdida').length
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
 
-  const encerradas = ganhas + perdidas
-  const taxaConversao = encerradas > 0 ? Math.round((ganhas / encerradas) * 100) : null
+  const activeProposals = proposals.filter(
+    (p) => !['Ganha', 'Perdida'].includes(p.estado ?? ''),
+  )
+
+  const totalPipeline = activeProposals.reduce(
+    (sum, p) => sum + (typeof p.valorVendaFinal === 'number' ? p.valorVendaFinal : 0),
+    0,
+  )
+
+  const wonThisMonth = proposals.filter(
+    (p) => p.estado === 'Ganha' && p.updatedAt >= startOfMonth,
+  ).length
+
+  const inEnviada = proposals.filter((p) => p.estado === 'Enviada').length
 
   const kpis = [
-    { label: 'Total', value: total },
-    { label: 'Em aberto', value: abertas },
-    { label: 'Ganhas', value: ganhas },
-    { label: 'Perdidas', value: perdidas },
-    { label: 'Conversão', value: taxaConversao !== null ? `${taxaConversao}%` : '—' },
+    { label: 'Propostas activas', value: activeProposals.length },
+    {
+      label: 'Pipeline total',
+      value:
+        totalPipeline > 0
+          ? `${totalPipeline.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}€`
+          : '—',
+    },
+    { label: 'Ganhas este mês', value: wonThisMonth },
+    { label: 'Em Enviada', value: inEnviada },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
       {kpis.map((kpi) => (
         <Card key={kpi.label}>
           <CardHeader className="pb-1 pt-3 px-4">

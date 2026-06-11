@@ -1,18 +1,21 @@
 import React from 'react'
 import './globals.css'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 
 export const metadata = {
   description: 'Sistema de gestão de propostas — Niu / Innovagency',
   title: 'Niu — Propostas',
 }
 
-export default async function RootLayout(props: { children: React.ReactNode }) {
+export default function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
   return (
     <html lang="pt">
       <body>
-        <main>{children}</main>
+        <QueryProvider>
+          <main>{children}</main>
+        </QueryProvider>
       </body>
     </html>
   )

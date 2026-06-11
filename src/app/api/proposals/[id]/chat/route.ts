@@ -76,10 +76,22 @@ export async function POST(
       }
     })
 
+    const logEntry = {
+      evento: `Budgeting follow-up: ${mensagem.slice(0, 50)}${mensagem.length > 50 ? '...' : ''}`,
+      user: typeof user.id === 'string' || typeof user.id === 'number' ? user.id : undefined,
+      timestamp: new Date().toISOString(),
+    }
+
     await payload.update({
       collection: 'proposals',
       id,
-      data: { sessaoOrcamentacao: updatedSessoes as Proposal['sessaoOrcamentacao'] },
+      data: {
+        sessaoOrcamentacao: updatedSessoes as Proposal['sessaoOrcamentacao'],
+        activityLog: [
+          ...(Array.isArray(proposal.activityLog) ? proposal.activityLog : []),
+          logEntry,
+        ],
+      },
       context: { skipActivityLog: true },
       overrideAccess: true,
     })

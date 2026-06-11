@@ -127,7 +127,6 @@ export const Proposals: CollectionConfig = {
     {
       name: 'briefing',
       type: 'richText',
-      required: true,
     },
     {
       name: 'figmaLink',

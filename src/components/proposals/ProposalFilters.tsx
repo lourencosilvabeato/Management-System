@@ -1,5 +1,6 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Input } from '@/components/ui/input'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
@@ -13,35 +14,45 @@ export type EstadoFilter =
   | 'Perdida'
 
 interface Props {
-  search: string
   onSearchChange: (v: string) => void
   estado: EstadoFilter
   onEstadoChange: (v: EstadoFilter) => void
+  resultCount: number
 }
 
-export function ProposalFilters({ search, onSearchChange, estado, onEstadoChange }: Props) {
+export function ProposalFilters({ onSearchChange, estado, onEstadoChange, resultCount }: Props) {
+  const [inputValue, setInputValue] = useState('')
+
+  useEffect(() => {
+    const timer = setTimeout(() => onSearchChange(inputValue), 300)
+    return () => clearTimeout(timer)
+  }, [inputValue, onSearchChange])
+
   return (
-    <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
-      <Input
-        placeholder="Pesquisar por nome ou cliente..."
-        value={search}
-        onChange={(e) => onSearchChange(e.target.value)}
-        className="sm:max-w-xs"
-      />
-      <Select value={estado} onValueChange={(v) => onEstadoChange(v as EstadoFilter)}>
-        <SelectTrigger className="sm:max-w-[180px]">
-          <SelectValue placeholder="Estado" />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="all">Todos os estados</SelectItem>
-          <SelectItem value="Recebida">Recebida</SelectItem>
-          <SelectItem value="EmElaboracao">Em Elaboração</SelectItem>
-          <SelectItem value="EmOrcamentacao">Em Orçamentação</SelectItem>
-          <SelectItem value="Enviada">Enviada</SelectItem>
-          <SelectItem value="Ganha">Ganha</SelectItem>
-          <SelectItem value="Perdida">Perdida</SelectItem>
-        </SelectContent>
-      </Select>
+    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center">
+        <Input
+          placeholder="Pesquisar por nome ou cliente..."
+          value={inputValue}
+          onChange={(e) => setInputValue(e.target.value)}
+          className="sm:w-72"
+        />
+        <Select value={estado} onValueChange={(v) => onEstadoChange(v as EstadoFilter)}>
+          <SelectTrigger className="sm:w-48">
+            <SelectValue placeholder="Estado" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Todos os estados</SelectItem>
+            <SelectItem value="Recebida">Recebida</SelectItem>
+            <SelectItem value="EmElaboracao">Em Elaboração</SelectItem>
+            <SelectItem value="EmOrcamentacao">Em Orçamentação</SelectItem>
+            <SelectItem value="Enviada">Enviada</SelectItem>
+            <SelectItem value="Ganha">Ganha</SelectItem>
+            <SelectItem value="Perdida">Perdida</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <p className="text-xs text-muted-foreground">{resultCount} propostas</p>
     </div>
   )
 }
