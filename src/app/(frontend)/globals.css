@@ -85,36 +85,36 @@
 
 /* ── Dark — NIU warm charcoal + electric orange ───────── */
 .dark {
-    --background:           oklch(0.090 0.010 48);
-    --foreground:           oklch(0.930 0.008 58);
-    --card:                 oklch(0.130 0.010 48);
-    --card-foreground:      oklch(0.930 0.008 58);
-    --popover:              oklch(0.130 0.010 48);
-    --popover-foreground:   oklch(0.930 0.008 58);
+    --background:           oklch(0.160 0.012 48);
+    --foreground:           oklch(0.940 0.008 58);
+    --card:                 oklch(0.215 0.014 48);
+    --card-foreground:      oklch(0.940 0.008 58);
+    --popover:              oklch(0.215 0.014 48);
+    --popover-foreground:   oklch(0.940 0.008 58);
     --primary:              oklch(0.700 0.210 40);
-    --primary-foreground:   oklch(0.090 0.010 48);
-    --secondary:            oklch(0.180 0.010 48);
-    --secondary-foreground: oklch(0.930 0.008 58);
-    --muted:                oklch(0.180 0.010 48);
-    --muted-foreground:     oklch(0.520 0.015 52);
+    --primary-foreground:   oklch(0.100 0.010 48);
+    --secondary:            oklch(0.240 0.012 48);
+    --secondary-foreground: oklch(0.940 0.008 58);
+    --muted:                oklch(0.240 0.012 48);
+    --muted-foreground:     oklch(0.590 0.015 52);
     --accent:               oklch(0.700 0.210 40);
-    --accent-foreground:    oklch(0.090 0.010 48);
+    --accent-foreground:    oklch(0.100 0.010 48);
     --destructive:          oklch(0.650 0.220 22);
-    --border:               oklch(0.240 0.012 48);
-    --input:                oklch(0.200 0.010 48);
+    --border:               oklch(0.300 0.014 48);
+    --input:                oklch(0.255 0.012 48);
     --ring:                 oklch(0.700 0.210 40);
     --chart-1:              oklch(0.700 0.210 40);
     --chart-2:              oklch(0.740 0.175 58);
     --chart-3:              oklch(0.650 0.200 25);
     --chart-4:              oklch(0.720 0.165 145);
     --chart-5:              oklch(0.600 0.175 265);
-    --sidebar:              oklch(0.110 0.010 48);
-    --sidebar-foreground:   oklch(0.930 0.008 58);
+    --sidebar:              oklch(0.185 0.012 48);
+    --sidebar-foreground:   oklch(0.940 0.008 58);
     --sidebar-primary:      oklch(0.700 0.210 40);
-    --sidebar-primary-foreground: oklch(0.090 0.010 48);
-    --sidebar-accent:       oklch(0.180 0.010 48);
-    --sidebar-accent-foreground: oklch(0.930 0.008 58);
-    --sidebar-border:       oklch(0.240 0.012 48);
+    --sidebar-primary-foreground: oklch(0.100 0.010 48);
+    --sidebar-accent:       oklch(0.240 0.012 48);
+    --sidebar-accent-foreground: oklch(0.940 0.008 58);
+    --sidebar-border:       oklch(0.300 0.014 48);
     --sidebar-ring:         oklch(0.700 0.210 40);
 }
 
@@ -138,13 +138,13 @@
 
 /* ── Glass utility ────────────────────────────────────── */
 .glass {
-  background: oklch(0.13 0.010 48 / 72%);
+  background: oklch(0.215 0.014 48 / 75%);
   backdrop-filter: blur(24px);
   -webkit-backdrop-filter: blur(24px);
-  border: 1px solid oklch(1 0 0 / 7%);
+  border: 1px solid oklch(1 0 0 / 9%);
   box-shadow:
-    0 8px 32px oklch(0 0 0 / 50%),
-    inset 0 1px 0 oklch(1 0 0 / 5%);
+    0 8px 32px oklch(0 0 0 / 40%),
+    inset 0 1px 0 oklch(1 0 0 / 6%);
 }
 
 /* ── Orange glow button ───────────────────────────────── */

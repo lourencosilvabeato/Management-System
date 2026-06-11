@@ -95,7 +95,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
   }
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col flex-1 min-h-0">
       {/* ── Header ─────────────────────────────────────── */}
       <div className="px-8 pt-7 pb-5 border-b border-white/[0.06] shrink-0">
         <div className="flex items-start gap-3 min-w-0">
@@ -140,7 +140,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
       </div>
 
       {/* ── Tabs ───────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-8 pb-8">
+      <div className="flex-1 overflow-y-auto min-h-0 px-8 pb-8">
         <Tabs defaultValue="dados" className="mt-5">
           <TabsList className="w-full justify-start gap-1 bg-transparent p-0 border-b border-white/[0.06] rounded-none h-auto pb-0">
             {[

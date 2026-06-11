@@ -163,8 +163,8 @@ export function AnimatedBackground() {
         className="absolute inset-0"
         style={{
           background: [
-            'radial-gradient(ellipse 80% 60% at 15% 15%, rgba(194,65,12,0.13) 0%, transparent 60%)',
-            'radial-gradient(ellipse 60% 50% at 85% 85%, rgba(146,64,14,0.10) 0%, transparent 55%)',
+            'radial-gradient(ellipse 80% 60% at 15% 15%, rgba(194,65,12,0.18) 0%, transparent 60%)',
+            'radial-gradient(ellipse 60% 50% at 85% 85%, rgba(146,64,14,0.14) 0%, transparent 55%)',
           ].join(', '),
         }}
       />

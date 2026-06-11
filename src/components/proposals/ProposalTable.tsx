@@ -327,7 +327,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
 
       {/* Proposal detail modal */}
       <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-        <DialogContent className="max-w-5xl w-[92vw] h-[88vh] p-0 overflow-hidden glass border-white/[0.08]">
+        <DialogContent className="!max-w-[90vw] !w-[90vw] !h-[88vh] p-0 overflow-hidden flex flex-col glass border-white/[0.08]">
           {selectedId && (
             <ProposalDrawer
               id={selectedId}
