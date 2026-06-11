@@ -3,7 +3,6 @@
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { lexicalToText, textToLexical } from '@/lib/lexical'
@@ -17,11 +16,28 @@ interface Props {
   onSave: () => void
 }
 
+/* ── Section card ─────────────────────────────────────────────── */
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-border/70 overflow-hidden">
-      <div className="px-5 py-2.5 border-b border-border/70 bg-muted/40">
-        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80">
+    <div
+      className="rounded-xl overflow-hidden"
+      style={{
+        border: '1px solid oklch(0.34 0.016 48)',
+        background: 'oklch(0.205 0.013 48)',
+      }}
+    >
+      <div
+        className="px-5 py-3 flex items-center gap-2.5"
+        style={{
+          background: 'oklch(0.230 0.014 48)',
+          borderBottom: '1px solid oklch(0.34 0.016 48)',
+          borderLeft: '3px solid oklch(0.70 0.21 40)',
+        }}
+      >
+        <p
+          className="text-xs font-bold uppercase tracking-widest"
+          style={{ color: 'oklch(0.70 0.21 40)' }}
+        >
           {title}
         </p>
       </div>
@@ -30,14 +46,34 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
+/* ── Read-only field ─────────────────────────────────────────── */
 function ReadField({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div className="space-y-1">
-      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70">{label}</p>
-      <p className="text-sm font-medium">{value ?? '—'}</p>
+    <div
+      className="rounded-lg px-4 py-3 space-y-1"
+      style={{ background: 'oklch(0.235 0.013 48)', border: '1px solid oklch(0.30 0.014 48)' }}
+    >
+      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'oklch(0.60 0.015 52)' }}>
+        {label}
+      </p>
+      <p className="text-base font-semibold text-foreground">{value ?? '—'}</p>
     </div>
   )
 }
+
+/* ── Editable field wrapper ──────────────────────────────────── */
+function Field({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="space-y-2">
+      <p className="text-sm font-semibold" style={{ color: 'oklch(0.80 0.012 52)' }}>
+        {label}
+      </p>
+      {children}
+    </div>
+  )
+}
+
+/* ─────────────────────────────────────────────────────────────── */
 
 export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Props) {
   const isReadOnly = currentUser.role === 'criativo'
@@ -161,11 +197,12 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
   const formatDate = (d?: string | null) =>
     d ? new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
 
+  /* ── Read-only view (criativo) ──────────────────────────────── */
   if (isReadOnly) {
     return (
-      <div className="space-y-4 py-2">
+      <div className="space-y-5 py-2">
         <Section title="Identificação">
-          <div className="grid grid-cols-2 gap-5">
+          <div className="grid grid-cols-2 gap-4">
             <ReadField label="Número" value={proposal.numero} />
             <ReadField label="Criado em" value={formatDate(proposal.createdAt)} />
           </div>
@@ -181,11 +218,13 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
     )
   }
 
+  /* ── Editable view ──────────────────────────────────────────── */
   return (
-    <div className="space-y-4 py-2">
-      {/* ── Identificação (read-only meta) ──────────── */}
+    <div className="space-y-5 py-2">
+
+      {/* Identificação */}
       <Section title="Identificação">
-        <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <ReadField label="Número" value={proposal.numero} />
           <ReadField label="Criado em" value={formatDate(proposal.createdAt)} />
           {typeof proposal.margemCalculada === 'number' && (
@@ -197,21 +236,18 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
         </div>
       </Section>
 
-      {/* ── Projecto ────────────────────────────────── */}
+      {/* Projecto */}
       <Section title="Projecto">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-          <div className="space-y-2">
-            <Label>Nome do projecto *</Label>
-            <Input value={form.nomeProjeto} onChange={(e) => set('nomeProjeto', e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Cliente *</Label>
-            <Input value={form.cliente} onChange={(e) => set('cliente', e.target.value)} />
-          </div>
-          <div className="space-y-2">
-            <Label>Account</Label>
+          <Field label="Nome do projecto *">
+            <Input value={form.nomeProjeto} onChange={(e) => set('nomeProjeto', e.target.value)} className="text-base h-11" />
+          </Field>
+          <Field label="Cliente *">
+            <Input value={form.cliente} onChange={(e) => set('cliente', e.target.value)} className="text-base h-11" />
+          </Field>
+          <Field label="Account">
             <Select value={form.accountId} onValueChange={(v) => set('accountId', v ?? '')}>
-              <SelectTrigger>
+              <SelectTrigger className="text-base h-11">
                 <SelectValue placeholder="Seleccionar account..." />
               </SelectTrigger>
               <SelectContent>
@@ -222,75 +258,72 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
                 ))}
               </SelectContent>
             </Select>
-          </div>
-          <div className="space-y-2">
-            <Label>Prazo de resposta</Label>
-            <Input type="date" value={form.prazoResposta} onChange={(e) => set('prazoResposta', e.target.value)} />
-          </div>
+          </Field>
+          <Field label="Prazo de resposta">
+            <Input type="date" value={form.prazoResposta} onChange={(e) => set('prazoResposta', e.target.value)} className="text-base h-11" />
+          </Field>
         </div>
       </Section>
 
-      {/* ── Contacto ────────────────────────────────── */}
+      {/* Contacto */}
       <Section title="Contacto">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Nome</Label>
-            <Input value={form.contactoNome} onChange={(e) => set('contactoNome', e.target.value)} placeholder="Nome do contacto" />
-          </div>
-          <div className="space-y-2">
-            <Label>Email</Label>
-            <Input type="email" value={form.contactoEmail} onChange={(e) => set('contactoEmail', e.target.value)} placeholder="email@empresa.pt" />
-          </div>
-          <div className="space-y-2">
-            <Label>Telefone</Label>
-            <Input value={form.contactoTelefone} onChange={(e) => set('contactoTelefone', e.target.value)} placeholder="+351 9xx xxx xxx" />
-          </div>
+          <Field label="Nome">
+            <Input value={form.contactoNome} onChange={(e) => set('contactoNome', e.target.value)} placeholder="Nome do contacto" className="text-base h-11" />
+          </Field>
+          <Field label="Email">
+            <Input type="email" value={form.contactoEmail} onChange={(e) => set('contactoEmail', e.target.value)} placeholder="email@empresa.pt" className="text-base h-11" />
+          </Field>
+          <Field label="Telefone">
+            <Input value={form.contactoTelefone} onChange={(e) => set('contactoTelefone', e.target.value)} placeholder="+351 9xx xxx xxx" className="text-base h-11" />
+          </Field>
         </div>
       </Section>
 
-      {/* ── Comercial ───────────────────────────────── */}
+      {/* Comercial */}
       <Section title="Comercial">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-          <div className="space-y-2">
-            <Label>Valor de venda (€)</Label>
-            <Input type="number" min={0} step={0.01} value={form.valorVendaFinal} onChange={(e) => set('valorVendaFinal', e.target.value)} placeholder="0.00" />
-          </div>
-          <div className="space-y-2">
-            <Label>Condições de pagamento</Label>
-            <Input value={form.condicoesPagamento} onChange={(e) => set('condicoesPagamento', e.target.value)} placeholder="Ex: 50% + 50%" />
-          </div>
-          <div className="space-y-2">
-            <Label>Validade da proposta</Label>
-            <Input type="date" value={form.validadeProposta} onChange={(e) => set('validadeProposta', e.target.value)} />
-          </div>
+          <Field label="Valor de venda (€)">
+            <Input type="number" min={0} step={0.01} value={form.valorVendaFinal} onChange={(e) => set('valorVendaFinal', e.target.value)} placeholder="0.00" className="text-base h-11" />
+          </Field>
+          <Field label="Condições de pagamento">
+            <Input value={form.condicoesPagamento} onChange={(e) => set('condicoesPagamento', e.target.value)} placeholder="Ex: 50% + 50%" className="text-base h-11" />
+          </Field>
+          <Field label="Validade da proposta">
+            <Input type="date" value={form.validadeProposta} onChange={(e) => set('validadeProposta', e.target.value)} className="text-base h-11" />
+          </Field>
         </div>
       </Section>
 
-      {/* ── Briefing ────────────────────────────────── */}
+      {/* Briefing */}
       <Section title="Briefing">
         <Textarea
           value={form.briefing}
           onChange={(e) => set('briefing', e.target.value)}
           rows={5}
           placeholder="Descrição do projecto, objectivos, dimensões, materiais preferidos..."
-          className="resize-none"
+          className="resize-none text-base"
         />
       </Section>
 
-      {/* ── Ficheiros ───────────────────────────────── */}
+      {/* Ficheiros */}
       <Section title={`Ficheiros anexados (${attachments.length})`}>
         {attachments.length > 0 && (
-          <ul className="space-y-2 mb-3">
+          <ul className="space-y-2 mb-4">
             {attachments.map((a, i) => {
               const id = typeof a === 'object' && a !== null && 'id' in a ? (a as { id: string | number }).id : a
               const filename = typeof a === 'object' && a !== null && 'filename' in a ? (a as { filename?: string | null }).filename : null
               return (
-                <li key={i} className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 text-sm">
-                  <span className="truncate text-foreground/80">{filename ?? `Ficheiro ${i + 1}`}</span>
+                <li
+                  key={i}
+                  className="flex items-center justify-between rounded-lg px-4 py-3 text-sm"
+                  style={{ border: '1px solid oklch(0.34 0.016 48)', background: 'oklch(0.235 0.013 48)' }}
+                >
+                  <span className="truncate text-base text-foreground/80">{filename ?? `Ficheiro ${i + 1}`}</span>
                   <Button
                     variant="ghost"
                     size="sm"
-                    className="text-destructive ml-2 shrink-0 h-7 text-xs"
+                    className="text-destructive ml-3 shrink-0 h-7 text-xs"
                     onClick={() => void handleRemoveAttachment(String(id))}
                   >
                     Remover
@@ -321,13 +354,13 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
       </Section>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {success && <p className="text-sm" style={{ color: 'oklch(0.72 0.165 145)' }}>Guardado com sucesso.</p>}
+      {success && <p className="text-sm font-medium" style={{ color: 'oklch(0.72 0.165 145)' }}>Guardado com sucesso.</p>}
 
       <div className="flex justify-end pt-1 pb-2">
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="btn-orange text-white border-0 px-6"
+          className="btn-orange text-white border-0 px-6 h-11 text-base font-semibold"
         >
           {saving ? 'A guardar...' : 'Guardar alterações'}
         </Button>
