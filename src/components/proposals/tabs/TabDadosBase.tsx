@@ -6,7 +6,6 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { Separator } from '@/components/ui/separator'
 import { lexicalToText, textToLexical } from '@/lib/lexical'
 import type { Proposal } from '@/payload-types'
 import type { CurrentUser, AccountUser } from '../ProposalDrawer'
@@ -18,11 +17,24 @@ interface Props {
   onSave: () => void
 }
 
-function Field({ label, value }: { label: string; value?: string | null }) {
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <div className="rounded-xl border border-border/70 overflow-hidden">
+      <div className="px-5 py-2.5 border-b border-border/70 bg-muted/40">
+        <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground/80">
+          {title}
+        </p>
+      </div>
+      <div className="p-5">{children}</div>
+    </div>
+  )
+}
+
+function ReadField({ label, value }: { label: string; value?: string | null }) {
   return (
     <div className="space-y-1">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">{label}</p>
-      <p className="text-sm">{value ?? '—'}</p>
+      <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground/70">{label}</p>
+      <p className="text-sm font-medium">{value ?? '—'}</p>
     </div>
   )
 }
@@ -55,7 +67,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
-
   const [attachUploading, setAttachUploading] = useState(false)
 
   const attachments = Array.isArray(proposal.ficheirosAnexos) ? proposal.ficheirosAnexos : []
@@ -85,7 +96,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
       if (form.valorVendaFinal !== '') {
         body.valorVendaFinal = parseFloat(form.valorVendaFinal)
       }
-
       const res = await fetch(`/api/proposals/${proposal.id}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
@@ -117,7 +127,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
       const uploaded = (await uploadRes.json()) as { doc?: { id: string | number } }
       const mediaId = uploaded.doc?.id
       if (!mediaId) { setError('Erro ao carregar ficheiro'); return }
-
       const currentIds = attachments.map((a) =>
         typeof a === 'object' && a !== null && 'id' in a ? (a as { id: string | number }).id : a,
       )
@@ -149,145 +158,180 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
     onSave()
   }
 
-  const formatDate = (d?: string | null) => {
-    if (!d) return '—'
-    return new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' })
+  const formatDate = (d?: string | null) =>
+    d ? new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
+
+  if (isReadOnly) {
+    return (
+      <div className="space-y-4 py-2">
+        <Section title="Identificação">
+          <div className="grid grid-cols-2 gap-5">
+            <ReadField label="Número" value={proposal.numero} />
+            <ReadField label="Criado em" value={formatDate(proposal.createdAt)} />
+          </div>
+        </Section>
+        <Section title="Projecto">
+          <div className="space-y-4">
+            <ReadField label="Nome do projecto" value={proposal.nomeProjeto} />
+            <ReadField label="Cliente" value={proposal.cliente} />
+            <ReadField label="Briefing" value={lexicalToText(proposal.briefing) || '—'} />
+          </div>
+        </Section>
+      </div>
+    )
   }
 
   return (
-    <div className="space-y-6 py-4">
-      {/* Read-only fields */}
-      <div className="grid grid-cols-2 gap-4">
-        <Field label="Número" value={proposal.numero} />
-        <Field label="Criado em" value={formatDate(proposal.createdAt)} />
-        {proposal.estado === 'Perdida' && (
-          <>
-            <Field label="Motivo de perda" value={proposal.motivoPerda ?? '—'} />
-            {proposal.detalhePerda && <Field label="Detalhe" value={proposal.detalhePerda} />}
-          </>
-        )}
-        {typeof proposal.margemCalculada === 'number' && (
-          <Field label="Margem calculada" value={`${proposal.margemCalculada.toFixed(1)}%`} />
-        )}
-      </div>
-
-      {isReadOnly ? (
-        <div className="space-y-4">
-          <Field label="Nome do projecto" value={proposal.nomeProjeto} />
-          <Field label="Cliente" value={proposal.cliente} />
-          <Field label="Briefing" value={lexicalToText(proposal.briefing) || '—'} />
+    <div className="space-y-4 py-2">
+      {/* ── Identificação (read-only meta) ──────────── */}
+      <Section title="Identificação">
+        <div className="grid grid-cols-2 gap-5 sm:grid-cols-4">
+          <ReadField label="Número" value={proposal.numero} />
+          <ReadField label="Criado em" value={formatDate(proposal.createdAt)} />
+          {typeof proposal.margemCalculada === 'number' && (
+            <ReadField label="Margem" value={`${proposal.margemCalculada.toFixed(1)}%`} />
+          )}
+          {proposal.estado === 'Perdida' && proposal.motivoPerda && (
+            <ReadField label="Motivo de perda" value={proposal.motivoPerda} />
+          )}
         </div>
-      ) : (
-        <>
-          <Separator />
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <Label>Nome do projecto *</Label>
-              <Input value={form.nomeProjeto} onChange={(e) => set('nomeProjeto', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Cliente *</Label>
-              <Input value={form.cliente} onChange={(e) => set('cliente', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Account</Label>
-              <Select value={form.accountId} onValueChange={(v) => set('accountId', v ?? '')}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Seleccionar account..." />
-                </SelectTrigger>
-                <SelectContent>
-                  {accountUsers.map((u) => (
-                    <SelectItem key={String(u.id)} value={String(u.id)}>
-                      {u.nome ?? u.email}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label>Prazo de resposta</Label>
-              <Input type="date" value={form.prazoResposta} onChange={(e) => set('prazoResposta', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Nome do contacto</Label>
-              <Input value={form.contactoNome} onChange={(e) => set('contactoNome', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Email do contacto</Label>
-              <Input type="email" value={form.contactoEmail} onChange={(e) => set('contactoEmail', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Telefone do contacto</Label>
-              <Input value={form.contactoTelefone} onChange={(e) => set('contactoTelefone', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Valor de venda (€)</Label>
-              <Input type="number" min={0} step={0.01} value={form.valorVendaFinal} onChange={(e) => set('valorVendaFinal', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Condições de pagamento</Label>
-              <Input value={form.condicoesPagamento} onChange={(e) => set('condicoesPagamento', e.target.value)} />
-            </div>
-            <div className="space-y-2">
-              <Label>Validade da proposta</Label>
-              <Input type="date" value={form.validadeProposta} onChange={(e) => set('validadeProposta', e.target.value)} />
-            </div>
+      </Section>
+
+      {/* ── Projecto ────────────────────────────────── */}
+      <Section title="Projecto">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <Label>Nome do projecto *</Label>
+            <Input value={form.nomeProjeto} onChange={(e) => set('nomeProjeto', e.target.value)} />
           </div>
           <div className="space-y-2">
-            <Label>Briefing</Label>
-            <Textarea
-              value={form.briefing}
-              onChange={(e) => set('briefing', e.target.value)}
-              rows={5}
-              placeholder="Descrição do projecto..."
-            />
+            <Label>Cliente *</Label>
+            <Input value={form.cliente} onChange={(e) => set('cliente', e.target.value)} />
           </div>
-
-          {/* Attachments */}
-          <Separator />
-          <div className="space-y-3">
-            <p className="text-sm font-semibold">Ficheiros anexados ({attachments.length})</p>
-            {attachments.length > 0 && (
-              <ul className="space-y-1">
-                {attachments.map((a, i) => {
-                  const id = typeof a === 'object' && a !== null && 'id' in a ? (a as { id: string | number }).id : a
-                  const filename = typeof a === 'object' && a !== null && 'filename' in a ? (a as { filename?: string | null }).filename : null
-                  return (
-                    <li key={i} className="flex items-center justify-between rounded-md border px-3 py-2 text-sm">
-                      <span className="truncate">{filename ?? `Ficheiro ${i + 1}`}</span>
-                      <Button variant="ghost" size="sm" className="text-destructive ml-2 shrink-0" onClick={() => void handleRemoveAttachment(String(id))}>
-                        Remover
-                      </Button>
-                    </li>
-                  )
-                })}
-              </ul>
-            )}
-            <div>
-              <input
-                id="attach-input"
-                type="file"
-                accept=".jpg,.jpeg,.png,.pdf"
-                className="hidden"
-                onChange={(e) => void handleAddAttachment(e)}
-                disabled={attachUploading}
-              />
-              <Button variant="outline" size="sm" onClick={() => document.getElementById('attach-input')?.click()} disabled={attachUploading}>
-                {attachUploading ? 'A carregar...' : '+ Adicionar ficheiro'}
-              </Button>
-            </div>
+          <div className="space-y-2">
+            <Label>Account</Label>
+            <Select value={form.accountId} onValueChange={(v) => set('accountId', v ?? '')}>
+              <SelectTrigger>
+                <SelectValue placeholder="Seleccionar account..." />
+              </SelectTrigger>
+              <SelectContent>
+                {accountUsers.map((u) => (
+                  <SelectItem key={String(u.id)} value={String(u.id)}>
+                    {u.nome ?? u.email}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
-
-          {error && <p className="text-sm text-destructive">{error}</p>}
-          {success && <p className="text-sm text-green-600">Guardado com sucesso.</p>}
-
-          <div className="flex justify-end pt-2">
-            <Button onClick={handleSave} disabled={saving}>
-              {saving ? 'A guardar...' : 'Guardar alterações'}
-            </Button>
+          <div className="space-y-2">
+            <Label>Prazo de resposta</Label>
+            <Input type="date" value={form.prazoResposta} onChange={(e) => set('prazoResposta', e.target.value)} />
           </div>
-        </>
-      )}
+        </div>
+      </Section>
+
+      {/* ── Contacto ────────────────────────────────── */}
+      <Section title="Contacto">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Nome</Label>
+            <Input value={form.contactoNome} onChange={(e) => set('contactoNome', e.target.value)} placeholder="Nome do contacto" />
+          </div>
+          <div className="space-y-2">
+            <Label>Email</Label>
+            <Input type="email" value={form.contactoEmail} onChange={(e) => set('contactoEmail', e.target.value)} placeholder="email@empresa.pt" />
+          </div>
+          <div className="space-y-2">
+            <Label>Telefone</Label>
+            <Input value={form.contactoTelefone} onChange={(e) => set('contactoTelefone', e.target.value)} placeholder="+351 9xx xxx xxx" />
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Comercial ───────────────────────────────── */}
+      <Section title="Comercial">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+          <div className="space-y-2">
+            <Label>Valor de venda (€)</Label>
+            <Input type="number" min={0} step={0.01} value={form.valorVendaFinal} onChange={(e) => set('valorVendaFinal', e.target.value)} placeholder="0.00" />
+          </div>
+          <div className="space-y-2">
+            <Label>Condições de pagamento</Label>
+            <Input value={form.condicoesPagamento} onChange={(e) => set('condicoesPagamento', e.target.value)} placeholder="Ex: 50% + 50%" />
+          </div>
+          <div className="space-y-2">
+            <Label>Validade da proposta</Label>
+            <Input type="date" value={form.validadeProposta} onChange={(e) => set('validadeProposta', e.target.value)} />
+          </div>
+        </div>
+      </Section>
+
+      {/* ── Briefing ────────────────────────────────── */}
+      <Section title="Briefing">
+        <Textarea
+          value={form.briefing}
+          onChange={(e) => set('briefing', e.target.value)}
+          rows={5}
+          placeholder="Descrição do projecto, objectivos, dimensões, materiais preferidos..."
+          className="resize-none"
+        />
+      </Section>
+
+      {/* ── Ficheiros ───────────────────────────────── */}
+      <Section title={`Ficheiros anexados (${attachments.length})`}>
+        {attachments.length > 0 && (
+          <ul className="space-y-2 mb-3">
+            {attachments.map((a, i) => {
+              const id = typeof a === 'object' && a !== null && 'id' in a ? (a as { id: string | number }).id : a
+              const filename = typeof a === 'object' && a !== null && 'filename' in a ? (a as { filename?: string | null }).filename : null
+              return (
+                <li key={i} className="flex items-center justify-between rounded-lg border border-border/60 bg-muted/30 px-4 py-2.5 text-sm">
+                  <span className="truncate text-foreground/80">{filename ?? `Ficheiro ${i + 1}`}</span>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-destructive ml-2 shrink-0 h-7 text-xs"
+                    onClick={() => void handleRemoveAttachment(String(id))}
+                  >
+                    Remover
+                  </Button>
+                </li>
+              )
+            })}
+          </ul>
+        )}
+        <div>
+          <input
+            id="attach-input"
+            type="file"
+            accept=".jpg,.jpeg,.png,.pdf"
+            className="hidden"
+            onChange={(e) => void handleAddAttachment(e)}
+            disabled={attachUploading}
+          />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => document.getElementById('attach-input')?.click()}
+            disabled={attachUploading}
+          >
+            {attachUploading ? 'A carregar...' : '+ Adicionar ficheiro'}
+          </Button>
+        </div>
+      </Section>
+
+      {error && <p className="text-sm text-destructive">{error}</p>}
+      {success && <p className="text-sm" style={{ color: 'oklch(0.72 0.165 145)' }}>Guardado com sucesso.</p>}
+
+      <div className="flex justify-end pt-1 pb-2">
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          className="btn-orange text-white border-0 px-6"
+        >
+          {saving ? 'A guardar...' : 'Guardar alterações'}
+        </Button>
+      </div>
     </div>
   )
 }

@@ -130,6 +130,8 @@
     @apply font-sans;
   }
 
+  html { font-size: 17px; }
+
   ::-webkit-scrollbar              { width: 5px; height: 5px; }
   ::-webkit-scrollbar-track        { background: transparent; }
   ::-webkit-scrollbar-thumb        { background: oklch(0.28 0.012 48); border-radius: 999px; }
