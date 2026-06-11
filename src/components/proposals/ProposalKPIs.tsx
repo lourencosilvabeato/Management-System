@@ -38,9 +38,9 @@ export function ProposalKPIs({ proposals }: Props) {
       label: 'Propostas activas',
       value: active.length,
       icon: <Activity className="w-4 h-4" />,
-      color: 'oklch(0.70 0.21 40)',
-      glow: 'rgba(249,115,22,0.20)',
-      border: 'rgba(249,115,22,0.18)',
+      color: 'oklch(0.56 0.230 38)',
+      glow: 'rgba(210, 80, 15, 0.15)',
+      border: 'rgba(200, 75, 15, 0.22)',
     },
     {
       label: 'Pipeline total',
@@ -48,25 +48,25 @@ export function ProposalKPIs({ proposals }: Props) {
         ? `${pipeline.toLocaleString('pt-PT', { minimumFractionDigits: 0 })}€`
         : '—',
       icon: <TrendingUp className="w-4 h-4" />,
-      color: 'oklch(0.74 0.175 58)',
-      glow: 'rgba(245,158,11,0.18)',
-      border: 'rgba(245,158,11,0.16)',
+      color: 'oklch(0.60 0.175 55)',
+      glow: 'rgba(200, 140, 10, 0.14)',
+      border: 'rgba(190, 130, 10, 0.20)',
     },
     {
       label: 'Ganhas este mês',
       value: wonMonth,
       icon: <Trophy className="w-4 h-4" />,
-      color: 'oklch(0.72 0.165 145)',
-      glow: 'rgba(52,211,153,0.15)',
-      border: 'rgba(52,211,153,0.14)',
+      color: 'oklch(0.55 0.165 145)',
+      glow: 'rgba(30, 170, 100, 0.12)',
+      border: 'rgba(25, 160, 90, 0.18)',
     },
     {
       label: 'Em Enviada',
       value: enviada,
       icon: <Send className="w-4 h-4" />,
-      color: 'oklch(0.70 0.21 40)',
-      glow: 'rgba(249,115,22,0.15)',
-      border: 'rgba(249,115,22,0.14)',
+      color: 'oklch(0.56 0.230 38)',
+      glow: 'rgba(210, 80, 15, 0.12)',
+      border: 'rgba(200, 75, 15, 0.18)',
     },
   ]
 
@@ -82,7 +82,7 @@ export function ProposalKPIs({ proposals }: Props) {
           }}
           onMouseEnter={(e) => {
             const el = e.currentTarget as HTMLDivElement
-            el.style.boxShadow = `0 0 22px 2px ${kpi.glow}, 0 8px 32px rgba(0,0,0,0.45)`
+            el.style.boxShadow = `0 0 20px 2px ${kpi.glow}, 0 4px 16px rgba(0,0,0,0.10)`
             el.style.transform = 'translateY(-2px)'
           }}
           onMouseLeave={(e) => {
@@ -95,7 +95,7 @@ export function ProposalKPIs({ proposals }: Props) {
             {kpi.icon}
             <span className="text-xs font-medium text-muted-foreground">{kpi.label}</span>
           </div>
-          <span className="text-2xl font-bold tracking-tight">{kpi.value}</span>
+          <span className="text-2xl font-bold tracking-tight text-foreground">{kpi.value}</span>
         </div>
       ))}
     </div>

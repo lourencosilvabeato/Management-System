@@ -21,12 +21,12 @@ const ESTADO_LABELS: Record<string, string> = {
 }
 
 const ESTADO_CLASSES: Record<string, string> = {
-  Recebida:       'bg-stone-800/60    text-stone-300   border-stone-600/50',
-  EmElaboracao:   'bg-sky-900/50      text-sky-300     border-sky-700/50',
-  EmOrcamentacao: 'bg-orange-950/60   text-orange-300  border-orange-700/50',
-  Enviada:        'bg-amber-900/50    text-amber-300   border-amber-700/50',
-  Ganha:          'bg-emerald-900/50  text-emerald-300 border-emerald-700/50',
-  Perdida:        'bg-rose-900/50     text-rose-300    border-rose-700/50',
+  Recebida:       'bg-stone-100     text-stone-700  border-stone-300',
+  EmElaboracao:   'bg-sky-100       text-sky-700    border-sky-300',
+  EmOrcamentacao: 'bg-orange-100    text-orange-700 border-orange-300',
+  Enviada:        'bg-amber-100     text-amber-700  border-amber-300',
+  Ganha:          'bg-emerald-100   text-emerald-700 border-emerald-300',
+  Perdida:        'bg-rose-100      text-rose-700   border-rose-300',
 }
 
 export interface CurrentUser {
@@ -97,7 +97,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
   return (
     <div className="flex flex-col flex-1 min-h-0">
       {/* ── Header ─────────────────────────────────────── */}
-      <div className="px-8 pt-7 pb-5 border-b border-white/[0.06] shrink-0">
+      <div className="px-8 pt-7 pb-5 border-b border-border shrink-0">
         <div className="flex items-start gap-3 min-w-0">
           <div className="min-w-0 flex-1 space-y-2">
             {/* Number + badge */}
@@ -105,9 +105,9 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
               <span
                 className="text-xs font-mono px-2 py-0.5 rounded"
                 style={{
-                  background: 'oklch(0.18 0.010 48)',
-                  color: 'oklch(0.70 0.21 40)',
-                  border: '1px solid oklch(0.70 0.21 40 / 25%)',
+                  background: 'oklch(0.60 0.230 38 / 10%)',
+                  color: 'oklch(0.48 0.230 38)',
+                  border: '1px solid oklch(0.60 0.230 38 / 35%)',
                 }}
               >
                 {proposal.numero}
@@ -118,7 +118,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
             </div>
 
             {/* Title */}
-            <h2 className="text-xl font-bold leading-tight truncate pr-8">
+            <h2 className="text-xl font-bold leading-tight truncate pr-8 text-foreground">
               {proposal.nomeProjeto}
             </h2>
 
@@ -142,7 +142,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
       {/* ── Tabs ───────────────────────────────────────── */}
       <div className="flex-1 overflow-y-auto min-h-0 px-8 pb-8">
         <Tabs defaultValue="dados" className="mt-5">
-          <TabsList className="w-full justify-start gap-1 bg-transparent p-0 border-b border-white/[0.06] rounded-none h-auto pb-0">
+          <TabsList className="w-full justify-start gap-1 bg-transparent p-0 border-b border-border rounded-none h-auto pb-0">
             {[
               { value: 'dados', label: 'Dados Base' },
               { value: 'criativa', label: 'Criativa' },

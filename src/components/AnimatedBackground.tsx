@@ -13,7 +13,7 @@ interface Particle {
 
 const PARTICLE_COUNT = 72
 const MAX_DIST = 140
-const BASE_SPEED = 0.32
+const BASE_SPEED = 0.30
 const MOUSE_RADIUS = 180
 const MOUSE_FORCE = 0.005
 
@@ -33,7 +33,6 @@ export function AnimatedBackground() {
     const resize = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
-      // Re-scatter particles within new bounds
       particles.current.forEach((p) => {
         p.x = Math.min(p.x, canvas.width)
         p.y = Math.min(p.y, canvas.height)
@@ -47,7 +46,7 @@ export function AnimatedBackground() {
         vx: (Math.random() - 0.5) * BASE_SPEED * 2,
         vy: (Math.random() - 0.5) * BASE_SPEED * 2,
         radius: Math.random() * 1.4 + 0.7,
-        opacity: Math.random() * 0.35 + 0.25,
+        opacity: Math.random() * 0.30 + 0.20,
       }))
     }
 
@@ -60,9 +59,7 @@ export function AnimatedBackground() {
     }
     window.addEventListener('mousemove', onMove, { passive: true })
 
-    const onVisibility = () => {
-      paused.current = document.hidden
-    }
+    const onVisibility = () => { paused.current = document.hidden }
     document.addEventListener('visibilitychange', onVisibility)
 
     const draw = () => {
@@ -77,7 +74,7 @@ export function AnimatedBackground() {
       const mx = mouse.current.x
       const my = mouse.current.y
 
-      // Update
+      // Update positions
       for (const p of pts) {
         const dx = mx - p.x
         const dy = my - p.y
@@ -104,19 +101,19 @@ export function AnimatedBackground() {
         if (p.y > h) { p.y = h; p.vy *= -1 }
       }
 
-      // Connections
+      // Connections — dark orange lines, subtle on white
       for (let i = 0; i < pts.length; i++) {
         for (let j = i + 1; j < pts.length; j++) {
           const a = pts[i]
           const b = pts[j]
           const dist = Math.hypot(a.x - b.x, a.y - b.y)
           if (dist < MAX_DIST) {
-            const alpha = (1 - dist / MAX_DIST) * 0.22
+            const alpha = (1 - dist / MAX_DIST) * 0.12
             ctx.beginPath()
             ctx.moveTo(a.x, a.y)
             ctx.lineTo(b.x, b.y)
-            ctx.strokeStyle = `rgba(249,115,22,${alpha})`
-            ctx.lineWidth = 0.7
+            ctx.strokeStyle = `rgba(180, 70, 15, ${alpha})`
+            ctx.lineWidth = 0.8
             ctx.stroke()
           }
         }
@@ -128,11 +125,11 @@ export function AnimatedBackground() {
         const highlight = nearMouse < 100 ? (1 - nearMouse / 100) * 0.9 : 0
 
         // Outer glow
-        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 4)
-        grd.addColorStop(0, `rgba(249,115,22,${(p.opacity + highlight * 0.4) * 0.4})`)
-        grd.addColorStop(1, 'rgba(249,115,22,0)')
+        const grd = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, p.radius * 5)
+        grd.addColorStop(0, `rgba(200, 80, 20, ${(p.opacity + highlight * 0.3) * 0.25})`)
+        grd.addColorStop(1, 'rgba(200, 80, 20, 0)')
         ctx.beginPath()
-        ctx.arc(p.x, p.y, p.radius * 4, 0, Math.PI * 2)
+        ctx.arc(p.x, p.y, p.radius * 5, 0, Math.PI * 2)
         ctx.fillStyle = grd
         ctx.fill()
 
@@ -140,8 +137,8 @@ export function AnimatedBackground() {
         ctx.beginPath()
         ctx.arc(p.x, p.y, p.radius + highlight * 0.8, 0, Math.PI * 2)
         ctx.fillStyle = highlight > 0.2
-          ? `rgba(251,191,36,${p.opacity + highlight * 0.6})`
-          : `rgba(251,146,60,${p.opacity})`
+          ? `rgba(210, 90, 20, ${p.opacity + highlight * 0.6})`
+          : `rgba(185, 72, 18, ${p.opacity})`
         ctx.fill()
       }
     }
@@ -158,25 +155,17 @@ export function AnimatedBackground() {
 
   return (
     <div className="fixed inset-0 -z-10 overflow-hidden" aria-hidden="true">
-      {/* Warm gradient base */}
+      {/* Very subtle warm gradient tint */}
       <div
         className="absolute inset-0"
         style={{
           background: [
-            'radial-gradient(ellipse 80% 60% at 15% 15%, rgba(194,65,12,0.18) 0%, transparent 60%)',
-            'radial-gradient(ellipse 60% 50% at 85% 85%, rgba(146,64,14,0.14) 0%, transparent 55%)',
+            'radial-gradient(ellipse 70% 55% at 10% 10%, rgba(220,100,30,0.06) 0%, transparent 60%)',
+            'radial-gradient(ellipse 60% 45% at 90% 90%, rgba(200,80,20,0.04) 0%, transparent 55%)',
           ].join(', '),
         }}
       />
       <canvas ref={canvasRef} className="absolute inset-0 w-full h-full" />
-      {/* Edge vignette */}
-      <div
-        className="absolute inset-0 pointer-events-none"
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 90% at 50% 50%, transparent 45%, rgba(11,9,8,0.75) 100%)',
-        }}
-      />
     </div>
   )
 }

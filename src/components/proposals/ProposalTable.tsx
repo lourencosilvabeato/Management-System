@@ -39,12 +39,12 @@ const ESTADO_LABELS: Record<string, string> = {
 }
 
 const ESTADO_CLASSES: Record<string, string> = {
-  Recebida:       'bg-stone-800/60    text-stone-300   border-stone-600/50',
-  EmElaboracao:   'bg-sky-900/50      text-sky-300     border-sky-700/50',
-  EmOrcamentacao: 'bg-orange-950/60   text-orange-300  border-orange-700/50',
-  Enviada:        'bg-amber-900/50    text-amber-300   border-amber-700/50',
-  Ganha:          'bg-emerald-900/50  text-emerald-300 border-emerald-700/50',
-  Perdida:        'bg-rose-900/50     text-rose-300    border-rose-700/50',
+  Recebida:       'bg-stone-100     text-stone-700  border-stone-300',
+  EmElaboracao:   'bg-sky-100       text-sky-700    border-sky-300',
+  EmOrcamentacao: 'bg-orange-100    text-orange-700 border-orange-300',
+  Enviada:        'bg-amber-100     text-amber-700  border-amber-300',
+  Ganha:          'bg-emerald-100   text-emerald-700 border-emerald-300',
+  Perdida:        'bg-rose-100      text-rose-700   border-rose-300',
 }
 
 type SortCol = 'numero' | 'nomeProjeto' | 'cliente' | 'account' | 'createdAt' | 'valorVendaFinal' | 'estado'
@@ -247,7 +247,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
       <div className="glass rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
-            <TableRow>
+            <TableRow className="border-border/60">
               {(
                 [
                   { col: 'numero' as SortCol, label: 'Nº Proposta' },
@@ -261,7 +261,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
               ).map(({ col, label }) => (
                 <TableHead
                   key={col}
-                  className="cursor-pointer select-none whitespace-nowrap"
+                  className="cursor-pointer select-none whitespace-nowrap font-semibold text-foreground/70"
                   onClick={() => handleSort(col)}
                 >
                   {label}
@@ -296,13 +296,13 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
               filtered.map((p) => (
                 <TableRow
                   key={p.id}
-                  className="cursor-pointer transition-colors hover:bg-white/[0.04] border-white/[0.04]"
+                  className="cursor-pointer transition-colors hover:bg-foreground/[0.04] border-border/50"
                   onClick={() => setSelectedId(String(p.id))}
                 >
                   <TableCell className="font-mono text-xs text-muted-foreground">
                     {p.numero ?? '—'}
                   </TableCell>
-                  <TableCell className="font-medium">{p.nomeProjeto}</TableCell>
+                  <TableCell className="font-semibold">{p.nomeProjeto}</TableCell>
                   <TableCell>{p.cliente}</TableCell>
                   <TableCell>{getAccountName(p)}</TableCell>
                   <TableCell className="text-sm">{formatDate(p.createdAt)}</TableCell>
@@ -327,7 +327,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
 
       {/* Proposal detail modal */}
       <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-        <DialogContent className="!max-w-[90vw] !w-[90vw] !h-[88vh] p-0 overflow-hidden flex flex-col glass border-white/[0.08]">
+        <DialogContent className="!max-w-[90vw] !w-[90vw] !h-[88vh] p-0 overflow-hidden flex flex-col glass">
           {selectedId && (
             <ProposalDrawer
               id={selectedId}

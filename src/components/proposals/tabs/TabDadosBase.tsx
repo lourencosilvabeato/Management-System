@@ -16,28 +16,16 @@ interface Props {
   onSave: () => void
 }
 
-/* ── Section card ─────────────────────────────────────────────── */
+const ORANGE = 'oklch(0.60 0.230 38)'
+
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div
-      className="rounded-xl overflow-hidden"
-      style={{
-        border: '1px solid oklch(0.34 0.016 48)',
-        background: 'oklch(0.205 0.013 48)',
-      }}
-    >
+    <div className="rounded-xl overflow-hidden border border-border bg-card shadow-sm">
       <div
-        className="px-5 py-3 flex items-center gap-2.5"
-        style={{
-          background: 'oklch(0.230 0.014 48)',
-          borderBottom: '1px solid oklch(0.34 0.016 48)',
-          borderLeft: '3px solid oklch(0.70 0.21 40)',
-        }}
+        className="px-5 py-3 flex items-center bg-muted/60 border-b border-border"
+        style={{ borderLeft: `3px solid ${ORANGE}` }}
       >
-        <p
-          className="text-xs font-bold uppercase tracking-widest"
-          style={{ color: 'oklch(0.70 0.21 40)' }}
-        >
+        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: ORANGE }}>
           {title}
         </p>
       </div>
@@ -46,34 +34,23 @@ function Section({ title, children }: { title: string; children: React.ReactNode
   )
 }
 
-/* ── Read-only field ─────────────────────────────────────────── */
 function ReadField({ label, value }: { label: string; value?: string | null }) {
   return (
-    <div
-      className="rounded-lg px-4 py-3 space-y-1"
-      style={{ background: 'oklch(0.235 0.013 48)', border: '1px solid oklch(0.30 0.014 48)' }}
-    >
-      <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: 'oklch(0.60 0.015 52)' }}>
-        {label}
-      </p>
+    <div className="rounded-lg px-4 py-3 space-y-1 bg-muted/50 border border-border">
+      <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">{label}</p>
       <p className="text-base font-semibold text-foreground">{value ?? '—'}</p>
     </div>
   )
 }
 
-/* ── Editable field wrapper ──────────────────────────────────── */
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="space-y-2">
-      <p className="text-sm font-semibold" style={{ color: 'oklch(0.80 0.012 52)' }}>
-        {label}
-      </p>
+      <p className="text-sm font-semibold text-foreground/80">{label}</p>
       {children}
     </div>
   )
 }
-
-/* ─────────────────────────────────────────────────────────────── */
 
 export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Props) {
   const isReadOnly = currentUser.role === 'criativo'
@@ -197,7 +174,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
   const formatDate = (d?: string | null) =>
     d ? new Date(d).toLocaleDateString('pt-PT', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '—'
 
-  /* ── Read-only view (criativo) ──────────────────────────────── */
   if (isReadOnly) {
     return (
       <div className="space-y-5 py-2">
@@ -218,11 +194,9 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
     )
   }
 
-  /* ── Editable view ──────────────────────────────────────────── */
   return (
     <div className="space-y-5 py-2">
 
-      {/* Identificação */}
       <Section title="Identificação">
         <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
           <ReadField label="Número" value={proposal.numero} />
@@ -236,7 +210,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
         </div>
       </Section>
 
-      {/* Projecto */}
       <Section title="Projecto">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label="Nome do projecto *">
@@ -265,7 +238,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
         </div>
       </Section>
 
-      {/* Contacto */}
       <Section title="Contacto">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="Nome">
@@ -280,7 +252,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
         </div>
       </Section>
 
-      {/* Comercial */}
       <Section title="Comercial">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
           <Field label="Valor de venda (€)">
@@ -295,7 +266,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
         </div>
       </Section>
 
-      {/* Briefing */}
       <Section title="Briefing">
         <Textarea
           value={form.briefing}
@@ -306,7 +276,6 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
         />
       </Section>
 
-      {/* Ficheiros */}
       <Section title={`Ficheiros anexados (${attachments.length})`}>
         {attachments.length > 0 && (
           <ul className="space-y-2 mb-4">
@@ -314,11 +283,7 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
               const id = typeof a === 'object' && a !== null && 'id' in a ? (a as { id: string | number }).id : a
               const filename = typeof a === 'object' && a !== null && 'filename' in a ? (a as { filename?: string | null }).filename : null
               return (
-                <li
-                  key={i}
-                  className="flex items-center justify-between rounded-lg px-4 py-3 text-sm"
-                  style={{ border: '1px solid oklch(0.34 0.016 48)', background: 'oklch(0.235 0.013 48)' }}
-                >
+                <li key={i} className="flex items-center justify-between rounded-lg px-4 py-3 bg-muted/50 border border-border">
                   <span className="truncate text-base text-foreground/80">{filename ?? `Ficheiro ${i + 1}`}</span>
                   <Button
                     variant="ghost"
@@ -354,7 +319,7 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
       </Section>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
-      {success && <p className="text-sm font-medium" style={{ color: 'oklch(0.72 0.165 145)' }}>Guardado com sucesso.</p>}
+      {success && <p className="text-sm font-medium text-emerald-600">Guardado com sucesso.</p>}
 
       <div className="flex justify-end pt-1 pb-2">
         <Button

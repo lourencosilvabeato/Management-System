@@ -51,15 +51,15 @@ export default async function PropostasPage() {
 
       <div className="container mx-auto px-4 sm:px-6 max-w-7xl">
         {/* ── Top bar ──────────────────────────────────── */}
-        <header className="flex items-center justify-between py-5 border-b border-white/[0.05]">
+        <header className="flex items-center justify-between py-5 border-b border-border">
           <div className="flex items-center gap-3">
             <span
               className="text-xl font-black tracking-[0.25em] uppercase select-none"
-              style={{ color: 'oklch(0.70 0.21 40)' }}
+              style={{ color: 'oklch(0.60 0.230 38)' }}
             >
               NIU
             </span>
-            <span className="text-white/15 font-thin text-lg">/</span>
+            <span className="text-foreground/20 font-thin text-lg">/</span>
             <span className="text-sm text-muted-foreground">Pipeline Comercial</span>
           </div>
 
