@@ -1,9 +1,11 @@
 import { getPayload } from 'payload'
 import config from '@payload-config'
-import { notFound } from 'next/navigation'
+import { headers as getHeaders } from 'next/headers'
+import { notFound, redirect } from 'next/navigation'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { ProposalDrawer } from '@/components/proposals/ProposalDrawer'
+import { QueryProvider } from '@/components/providers/QueryProvider'
 
 export const dynamic = 'force-dynamic'
 
@@ -14,30 +16,56 @@ interface Props {
 export default async function PropostaDetailPage({ params }: Props) {
   const { id } = await params
   const payload = await getPayload({ config })
+  const headersList = await getHeaders()
 
-  let proposal
+  const { user } = await payload.auth({ headers: headersList })
+  if (!user) redirect('/admin')
+
+  const accountUsersRes = await payload.find({
+    collection: 'users',
+    where: { role: { equals: 'account' } },
+    limit: 200,
+    depth: 0,
+    overrideAccess: true,
+  })
+
+  let exists = true
   try {
-    proposal = await payload.findByID({
-      collection: 'proposals',
-      id,
-      depth: 2,
-      overrideAccess: true,
-    })
+    await payload.findByID({ collection: 'proposals', id, depth: 0, overrideAccess: true })
   } catch {
-    notFound()
+    exists = false
+  }
+  if (!exists) notFound()
+
+  const currentUser = {
+    id: user.id,
+    email: user.email ?? '',
+    role: (user as { role?: string }).role ?? 'account',
+    nome: (user as { nome?: string | null }).nome ?? null,
   }
 
-  if (!proposal) notFound()
+  const accountUsers = accountUsersRes.docs.map((u) => ({
+    id: u.id,
+    nome: (u as { nome?: string | null }).nome ?? null,
+    email: u.email ?? '',
+  }))
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="mb-6">
-        <Link href="/propostas">
-          <Button variant="ghost" size="sm">← Voltar às Propostas</Button>
-        </Link>
+    <QueryProvider>
+      <div className="container mx-auto px-4 py-8">
+        <div className="mb-4">
+          <Link href="/propostas">
+            <Button variant="ghost" size="sm">← Voltar às Propostas</Button>
+          </Link>
+        </div>
+        <div className="max-w-3xl">
+          <ProposalDrawer
+            id={id}
+            currentUser={currentUser}
+            accountUsers={accountUsers}
+          />
+        </div>
       </div>
-
-      <ProposalDrawer proposal={proposal} />
-    </div>
+    </QueryProvider>
   )
 }

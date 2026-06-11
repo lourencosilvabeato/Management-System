@@ -18,6 +18,7 @@ const CONFIANCA_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'>
 
 interface Props {
   proposal: Proposal
+  onRefresh: () => void
 }
 
 interface ConversaMsg {
@@ -26,7 +27,7 @@ interface ConversaMsg {
   timestamp: string
 }
 
-export function TabOrcamentacao({ proposal }: Props) {
+export function TabOrcamentacao({ proposal, onRefresh }: Props) {
   const router = useRouter()
 
   const sessoes = proposal.sessaoOrcamentacao ?? []
