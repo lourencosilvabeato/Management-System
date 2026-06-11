@@ -11,7 +11,7 @@ export default function RootLayout(props: { children: React.ReactNode }) {
   const { children } = props
 
   return (
-    <html lang="pt">
+    <html lang="pt" className="dark">
       <body>
         <QueryProvider>
           <main>{children}</main>

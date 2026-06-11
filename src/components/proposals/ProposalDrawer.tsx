@@ -22,12 +22,12 @@ const ESTADO_LABELS: Record<string, string> = {
 }
 
 const ESTADO_CLASSES: Record<string, string> = {
-  Recebida: 'bg-gray-100 text-gray-700 border-gray-300',
-  EmElaboracao: 'bg-blue-100 text-blue-700 border-blue-300',
-  EmOrcamentacao: 'bg-purple-100 text-purple-700 border-purple-300',
-  Enviada: 'bg-orange-100 text-orange-700 border-orange-300',
-  Ganha: 'bg-green-100 text-green-700 border-green-300',
-  Perdida: 'bg-red-100 text-red-700 border-red-300',
+  Recebida:       'bg-slate-800/60   text-slate-300   border-slate-600/60',
+  EmElaboracao:   'bg-blue-900/50    text-blue-300    border-blue-600/50',
+  EmOrcamentacao: 'bg-violet-900/50  text-violet-300  border-violet-600/50',
+  Enviada:        'bg-amber-900/50   text-amber-300   border-amber-600/50',
+  Ganha:          'bg-emerald-900/50 text-emerald-300 border-emerald-600/50',
+  Perdida:        'bg-rose-900/50    text-rose-300    border-rose-600/50',
 }
 
 export interface CurrentUser {
@@ -105,7 +105,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
 
   return (
     <div className="flex flex-col h-full">
-      <SheetHeader className="px-6 pt-6 pb-4 border-b shrink-0">
+      <SheetHeader className="px-6 pt-6 pb-4 border-b border-white/[0.06] shrink-0">
         <div className="flex items-start justify-between gap-2">
           <div className="space-y-1 min-w-0">
             <div className="flex items-center gap-2 flex-wrap">

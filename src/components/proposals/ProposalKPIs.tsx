@@ -1,10 +1,18 @@
 'use client'
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Activity, TrendingUp, Trophy, Send } from 'lucide-react'
 import type { Proposal } from '@/payload-types'
 
 interface Props {
   proposals: Proposal[]
+}
+
+interface KPI {
+  label: string
+  value: string | number
+  icon: React.ReactNode
+  accent: string
+  glow: string
 }
 
 export function ProposalKPIs({ proposals }: Props) {
@@ -26,30 +34,60 @@ export function ProposalKPIs({ proposals }: Props) {
 
   const inEnviada = proposals.filter((p) => p.estado === 'Enviada').length
 
-  const kpis = [
-    { label: 'Propostas activas', value: activeProposals.length },
+  const kpis: KPI[] = [
+    {
+      label: 'Propostas activas',
+      value: activeProposals.length,
+      icon: <Activity className="w-4 h-4" />,
+      accent: 'text-indigo-400',
+      glow: 'rgba(99,102,241,0.18)',
+    },
     {
       label: 'Pipeline total',
       value:
         totalPipeline > 0
-          ? `${totalPipeline.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}€`
+          ? `${totalPipeline.toLocaleString('pt-PT', { minimumFractionDigits: 0 })}€`
           : '—',
+      icon: <TrendingUp className="w-4 h-4" />,
+      accent: 'text-violet-400',
+      glow: 'rgba(139,92,246,0.18)',
     },
-    { label: 'Ganhas este mês', value: wonThisMonth },
-    { label: 'Em Enviada', value: inEnviada },
+    {
+      label: 'Ganhas este mês',
+      value: wonThisMonth,
+      icon: <Trophy className="w-4 h-4" />,
+      accent: 'text-emerald-400',
+      glow: 'rgba(52,211,153,0.15)',
+    },
+    {
+      label: 'Em Enviada',
+      value: inEnviada,
+      icon: <Send className="w-4 h-4" />,
+      accent: 'text-amber-400',
+      glow: 'rgba(251,191,36,0.15)',
+    },
   ]
 
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 flex-1">
       {kpis.map((kpi) => (
-        <Card key={kpi.label}>
-          <CardHeader className="pb-1 pt-3 px-4">
-            <CardTitle className="text-xs font-medium text-muted-foreground">{kpi.label}</CardTitle>
-          </CardHeader>
-          <CardContent className="pb-3 px-4">
-            <span className="text-2xl font-bold">{kpi.value}</span>
-          </CardContent>
-        </Card>
+        <div
+          key={kpi.label}
+          className="glass rounded-xl px-4 py-3 flex flex-col gap-2 group transition-all duration-300 hover:scale-[1.02]"
+          style={{ boxShadow: `0 0 0 0 ${kpi.glow}`, transition: 'box-shadow 0.3s, transform 0.3s' }}
+          onMouseEnter={(e) => {
+            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 0 24px 2px ${kpi.glow}, 0 8px 32px rgba(0,0,0,0.4)`
+          }}
+          onMouseLeave={(e) => {
+            (e.currentTarget as HTMLDivElement).style.boxShadow = `0 8px 32px rgba(0,0,0,0.4)`
+          }}
+        >
+          <div className={`flex items-center gap-1.5 ${kpi.accent}`}>
+            {kpi.icon}
+            <span className="text-xs font-medium text-muted-foreground">{kpi.label}</span>
+          </div>
+          <span className="text-2xl font-bold tracking-tight text-foreground">{kpi.value}</span>
+        </div>
       ))}
     </div>
   )

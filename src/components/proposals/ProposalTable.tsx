@@ -40,12 +40,12 @@ const ESTADO_LABELS: Record<string, string> = {
 }
 
 const ESTADO_CLASSES: Record<string, string> = {
-  Recebida: 'bg-gray-100 text-gray-700 border-gray-300',
-  EmElaboracao: 'bg-blue-100 text-blue-700 border-blue-300',
-  EmOrcamentacao: 'bg-purple-100 text-purple-700 border-purple-300',
-  Enviada: 'bg-orange-100 text-orange-700 border-orange-300',
-  Ganha: 'bg-green-100 text-green-700 border-green-300',
-  Perdida: 'bg-red-100 text-red-700 border-red-300',
+  Recebida:       'bg-slate-800/60   text-slate-300   border-slate-600/60',
+  EmElaboracao:   'bg-blue-900/50    text-blue-300    border-blue-600/50',
+  EmOrcamentacao: 'bg-violet-900/50  text-violet-300  border-violet-600/50',
+  Enviada:        'bg-amber-900/50   text-amber-300   border-amber-600/50',
+  Ganha:          'bg-emerald-900/50 text-emerald-300 border-emerald-600/50',
+  Perdida:        'bg-rose-900/50    text-rose-300    border-rose-600/50',
 }
 
 type SortCol = 'numero' | 'nomeProjeto' | 'cliente' | 'account' | 'createdAt' | 'valorVendaFinal' | 'estado'
@@ -226,11 +226,18 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-4">
         <ProposalKPIs proposals={proposals} />
         {canCreate && (
-          <Button onClick={() => setNewDialogOpen(true)} className="shrink-0 ml-4">
-            Nova Proposta
+          <Button
+            onClick={() => setNewDialogOpen(true)}
+            className="shrink-0 h-10 px-4 font-semibold text-sm"
+            style={{
+              background: 'linear-gradient(135deg, oklch(0.62 0.22 265), oklch(0.65 0.20 305))',
+              boxShadow: '0 0 20px rgba(99,102,241,0.3)',
+            }}
+          >
+            + Nova Proposta
           </Button>
         )}
       </div>
@@ -242,7 +249,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
         resultCount={filtered.length}
       />
 
-      <div className="rounded-md border">
+      <div className="glass rounded-xl overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -294,7 +301,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
               filtered.map((p) => (
                 <TableRow
                   key={p.id}
-                  className="cursor-pointer hover:bg-muted/50"
+                  className="cursor-pointer transition-colors hover:bg-white/[0.04] border-white/[0.04]"
                   onClick={() => setSelectedId(String(p.id))}
                 >
                   <TableCell className="font-mono text-xs text-muted-foreground">
@@ -327,7 +334,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
       <Sheet open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
         <SheetContent
           side="right"
-          className="w-[680px] sm:max-w-none overflow-y-auto p-0"
+          className="w-[680px] sm:max-w-none overflow-y-auto p-0 glass border-l border-white/[0.08]"
         >
           {selectedId && (
             <ProposalDrawer
@@ -367,7 +374,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
               <div className="space-y-2">
                 <Label>Account *</Label>
                 <select
-                  className="w-full border rounded-md px-3 py-2 text-sm"
+                  className="w-full border border-border bg-input rounded-md px-3 py-2 text-sm text-foreground"
                   value={createForm.accountId}
                   onChange={(e) => setCreateForm((f) => ({ ...f, accountId: e.target.value }))}
                 >
