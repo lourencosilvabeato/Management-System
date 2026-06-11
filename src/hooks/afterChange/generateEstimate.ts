@@ -7,6 +7,8 @@ export const generateEstimate: CollectionAfterChangeHook<Proposal> = async ({
   previousDoc,
   req,
 }) => {
+  if (req.context?.skipGenerateEstimate) return doc
+
   const justEnteredOrcamentacao =
     doc.estado === 'EmOrcamentacao' && previousDoc?.estado !== 'EmOrcamentacao'
 

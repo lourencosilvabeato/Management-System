@@ -18,7 +18,7 @@ import type { EstimateOutput, EstimateItem, EstimateRubrica } from '@/lib/ai/par
 
 const CONFIANCA_COLORS: Record<string, string> = {
   Alto: 'bg-green-100 text-green-800 border-green-300',
-  Médio: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+  Medio: 'bg-yellow-100 text-yellow-800 border-yellow-300',
   Baixo: 'bg-red-100 text-red-800 border-red-300',
 }
 

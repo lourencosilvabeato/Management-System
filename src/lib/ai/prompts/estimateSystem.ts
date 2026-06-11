@@ -16,7 +16,7 @@ Trabalhas para a Niu, uma agência de produção física. O teu papel é analisa
 {
   "abordagem_tecnica": "string — descrição técnica da solução proposta, materiais principais e método de construção",
   "nivel_confianca": {
-    "nivel": "Alto | Médio | Baixo",
+    "nivel": "Alto | Medio | Baixo",
     "justificacao": "string — razão para o nível de confiança dado (detalhe do briefing, projectos similares encontrados, incertezas)"
   },
   "estimativa": {

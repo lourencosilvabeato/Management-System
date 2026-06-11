@@ -19,7 +19,7 @@ const MOCK_ESTIMATE_RESPONSE = JSON.stringify({
     'Estrutura de 3x2m com painel traseiro impresso, balcão de atendimento com tampo em dibond e ' +
     'iluminação LED integrada no topo. Montagem prevista para 1 dia com equipa de 2 montadores.',
   nivel_confianca: {
-    nivel: 'Médio',
+    nivel: 'Medio',
     justificacao:
       'Briefing com informação suficiente sobre dimensões e materiais, mas sem maquetes ' +
       'detalhadas. Estimativa baseada em projectos similares da biblioteca.',

@@ -15,7 +15,7 @@ export interface EstimateItem {
 export interface EstimateOutput {
   abordagem_tecnica: string
   nivel_confianca: {
-    nivel: 'Alto' | 'Médio' | 'Baixo'
+    nivel: 'Alto' | 'Medio' | 'Baixo'
     justificacao: string
   }
   estimativa: {
@@ -42,7 +42,7 @@ function isValidEstimateOutput(obj: unknown): obj is EstimateOutput {
 
   const nc = o.nivel_confianca as Record<string, unknown> | undefined
   if (!nc || typeof nc !== 'object') return false
-  if (!['Alto', 'Médio', 'Baixo'].includes(nc.nivel as string)) return false
+  if (!['Alto', 'Medio', 'Baixo'].includes(nc.nivel as string)) return false
   if (typeof nc.justificacao !== 'string') return false
 
   const est = o.estimativa as Record<string, unknown> | undefined
