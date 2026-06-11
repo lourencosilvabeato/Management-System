@@ -1,16 +1,37 @@
 'use client'
 
-import { useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { ChevronDownIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader } from '@/components/ui/card'
 import { Separator } from '@/components/ui/separator'
+import { Badge } from '@/components/ui/badge'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import type { EstimateOutput, EstimateItem, EstimateRubrica } from '@/lib/ai/parseEstimate'
+
+const CONFIANCA_COLORS: Record<string, string> = {
+  Alto: 'bg-green-100 text-green-800 border-green-300',
+  Médio: 'bg-yellow-100 text-yellow-800 border-yellow-300',
+  Baixo: 'bg-red-100 text-red-800 border-red-300',
+}
 
 interface Props {
   estimativa: EstimateOutput['estimativa']
   proposalId: string
+  valorVendaFinal?: number | null
+  nivelConfianca?: string | null
+  nivelConfiancaJustificacao?: string | null
+  abordagemTecnica?: string | null
   onAccepted: () => void
+  onRegenerate?: () => void
+  readOnly?: boolean
 }
 
 function calcItemTotal(rubricas: EstimateRubrica[]): number {
@@ -21,11 +42,66 @@ function calcGeral(items: EstimateItem[]): number {
   return items.reduce((s, it) => s + it.total_item, 0)
 }
 
-export function EstimateEditor({ estimativa, proposalId, onAccepted }: Props) {
-  const [items, setItems] = useState<EstimateItem[]>(
-    (estimativa.items as EstimateItem[]).map((it) => ({ ...it, rubricas: [...it.rubricas] })),
+const newRubrica = (): EstimateRubrica => ({
+  descricao: 'Nova rubrica',
+  quantidade: 1,
+  unidade: 'un',
+  custo_unitario: 0,
+  custo_total: 0,
+})
+
+export function EstimateEditor({
+  estimativa,
+  proposalId,
+  valorVendaFinal,
+  nivelConfianca,
+  nivelConfiancaJustificacao,
+  abordagemTecnica,
+  onAccepted,
+  onRegenerate,
+  readOnly = false,
+}: Props) {
+  const initialItems = useMemo(
+    () =>
+      (estimativa.items as EstimateItem[]).map((it) => ({
+        ...it,
+        rubricas: it.rubricas.map((r) => ({ ...r })),
+      })),
+    [estimativa],
   )
+
+  const [items, setItems] = useState<EstimateItem[]>(initialItems)
   const [saving, setSaving] = useState(false)
+  const [savingVenda, setSavingVenda] = useState(false)
+  const [confirmRemove, setConfirmRemove] = useState<{ itemIdx: number; rubIdx: number } | null>(null)
+  const [confirmRegenerate, setConfirmRegenerate] = useState(false)
+  const [marginInput, setMarginInput] = useState('')
+  const [vendaInput, setVendaInput] = useState(
+    typeof valorVendaFinal === 'number' ? String(valorVendaFinal) : '',
+  )
+  const [collapsed, setCollapsed] = useState<Set<number>>(new Set())
+  const [approachExpanded, setApproachExpanded] = useState(false)
+
+  const totalGeral = calcGeral(items)
+
+  const hasUnsavedChanges = useMemo(() => {
+    return JSON.stringify(items) !== JSON.stringify(initialItems)
+  }, [items, initialItems])
+
+  useEffect(() => {
+    if (typeof valorVendaFinal === 'number') {
+      setVendaInput(String(valorVendaFinal))
+    }
+  }, [valorVendaFinal])
+
+  const toggleCollapse = (idx: number) => {
+    setCollapsed((prev) => {
+      const next = new Set(prev)
+      if (next.has(idx)) next.delete(idx)
+      else next.add(idx)
+      return next
+    })
+  }
 
   const updateRubrica = (
     itemIdx: number,
@@ -33,29 +109,60 @@ export function EstimateEditor({ estimativa, proposalId, onAccepted }: Props) {
     field: keyof EstimateRubrica,
     value: string | number,
   ) => {
-    setItems((prev) => {
-      const next = prev.map((it, i) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
         if (i !== itemIdx) return it
         const rubricas = it.rubricas.map((r, j) => {
           if (j !== rubIdx) return r
           const updated = { ...r, [field]: value }
           if (field === 'quantidade' || field === 'custo_unitario') {
-            updated.custo_total =
-              (field === 'quantidade' ? (value as number) : r.quantidade) *
-              (field === 'custo_unitario' ? (value as number) : r.custo_unitario)
+            const qty = field === 'quantidade' ? (value as number) : r.quantidade
+            const unit = field === 'custo_unitario' ? (value as number) : r.custo_unitario
+            updated.custo_total = qty * unit
           }
           return updated
         })
         return { ...it, rubricas, total_item: calcItemTotal(rubricas) }
-      })
-      return next
-    })
+      }),
+    )
+  }
+
+  const addRubrica = (itemIdx: number) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIdx) return it
+        const rubricas = [...it.rubricas, newRubrica()]
+        return { ...it, rubricas, total_item: calcItemTotal(rubricas) }
+      }),
+    )
+  }
+
+  const removeRubrica = (itemIdx: number, rubIdx: number) => {
+    setItems((prev) =>
+      prev.map((it, i) => {
+        if (i !== itemIdx) return it
+        const rubricas = it.rubricas.filter((_, j) => j !== rubIdx)
+        return { ...it, rubricas, total_item: calcItemTotal(rubricas) }
+      }),
+    )
+    setConfirmRemove(null)
+  }
+
+  const addItem = () => {
+    setItems((prev) => [
+      ...prev,
+      { nome: 'Novo item', rubricas: [newRubrica()], total_item: 0 },
+    ])
+  }
+
+  const updateItemName = (itemIdx: number, nome: string) => {
+    setItems((prev) => prev.map((it, i) => (i === itemIdx ? { ...it, nome } : it)))
   }
 
   const handleAccept = async () => {
     setSaving(true)
     try {
-      const estimativaEditada = { items, total_geral: calcGeral(items) }
+      const estimativaEditada = { items, total_geral: totalGeral }
       const res = await fetch(`/api/proposals/${proposalId}/estimate/accept`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -74,66 +181,341 @@ export function EstimateEditor({ estimativa, proposalId, onAccepted }: Props) {
     }
   }
 
-  const totalGeral = calcGeral(items)
+  const handleApplyVenda = async (value: string) => {
+    const num = parseFloat(value)
+    if (isNaN(num) || num <= 0) return
+    setSavingVenda(true)
+    try {
+      await fetch(`/api/proposals/${proposalId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ valorVendaFinal: num }),
+      })
+      onAccepted()
+    } catch {
+      /* silent */
+    } finally {
+      setSavingVenda(false)
+    }
+  }
+
+  const marginFromVenda =
+    vendaInput !== '' && parseFloat(vendaInput) > totalGeral
+      ? (((parseFloat(vendaInput) - totalGeral) / parseFloat(vendaInput)) * 100).toFixed(1)
+      : null
+
+  const showApproachToggle = (abordagemTecnica?.length ?? 0) > 180
 
   return (
     <div className="space-y-4">
+      {/* Header card: confidence + approach + actions */}
+      <div className="rounded-md border p-4 space-y-3">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1.5">
+            {nivelConfianca && (
+              <Badge variant="outline" className={CONFIANCA_COLORS[nivelConfianca] ?? 'bg-gray-100'}>
+                Confiança: {nivelConfianca}
+              </Badge>
+            )}
+            {nivelConfiancaJustificacao && (
+              <p className="text-xs text-muted-foreground">{nivelConfiancaJustificacao}</p>
+            )}
+          </div>
+          {!readOnly && (
+            <div className="flex gap-2 shrink-0">
+              <Button size="sm" onClick={() => void handleAccept()} disabled={saving}>
+                {saving ? 'A guardar...' : 'Aceitar estimativa'}
+              </Button>
+              {onRegenerate && (
+                <Button size="sm" variant="outline" onClick={() => setConfirmRegenerate(true)}>
+                  Regenerar
+                </Button>
+              )}
+            </div>
+          )}
+        </div>
+
+        {abordagemTecnica && (
+          <div className="space-y-1">
+            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+              Abordagem Técnica
+            </p>
+            <p className={`text-sm ${!approachExpanded && showApproachToggle ? 'line-clamp-3' : ''}`}>
+              {abordagemTecnica}
+            </p>
+            {showApproachToggle && (
+              <button
+                className="text-xs text-primary hover:underline"
+                onClick={() => setApproachExpanded((v) => !v)}
+              >
+                {approachExpanded ? 'Ver menos' : 'Ver mais'}
+              </button>
+            )}
+          </div>
+        )}
+
+        {hasUnsavedChanges && !readOnly && (
+          <Badge variant="outline" className="text-orange-600 border-orange-300">
+            Alterações não guardadas
+          </Badge>
+        )}
+      </div>
+
+      {/* Items */}
       {items.map((item, itemIdx) => (
         <Card key={itemIdx}>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm">{item.nome}</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground pb-1">
-              <span className="col-span-4">Descrição</span>
-              <span className="col-span-2">Qtd.</span>
-              <span className="col-span-2">Unidade</span>
-              <span className="col-span-2 text-right">Unit. (€)</span>
-              <span className="col-span-2 text-right">Total (€)</span>
-            </div>
-            {item.rubricas.map((r, rubIdx) => (
-              <div key={rubIdx} className="grid grid-cols-12 gap-2 items-center">
-                <span className="col-span-4 text-sm">{r.descricao}</span>
-                <Input
-                  className="col-span-2 h-7 text-xs"
-                  type="number"
-                  min={0}
-                  value={r.quantidade}
-                  onChange={(e) =>
-                    updateRubrica(itemIdx, rubIdx, 'quantidade', parseFloat(e.target.value) || 0)
-                  }
+          <CardHeader
+            className="pb-2 pt-3 cursor-pointer select-none"
+            onClick={() => toggleCollapse(itemIdx)}
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2 flex-1 min-w-0">
+                <ChevronDownIcon
+                  className={`h-4 w-4 shrink-0 transition-transform ${collapsed.has(itemIdx) ? '-rotate-90' : ''}`}
                 />
-                <span className="col-span-2 text-xs text-muted-foreground">{r.unidade}</span>
-                <Input
-                  className="col-span-2 h-7 text-xs text-right"
-                  type="number"
-                  min={0}
-                  step={0.01}
-                  value={r.custo_unitario}
-                  onChange={(e) =>
-                    updateRubrica(itemIdx, rubIdx, 'custo_unitario', parseFloat(e.target.value) || 0)
-                  }
-                />
-                <span className="col-span-2 text-right text-sm font-mono">
-                  {r.custo_total.toFixed(2)}€
-                </span>
+                {readOnly ? (
+                  <span className="text-sm font-semibold truncate">{item.nome}</span>
+                ) : (
+                  <Input
+                    value={item.nome}
+                    onChange={(e) => {
+                      e.stopPropagation()
+                      updateItemName(itemIdx, e.target.value)
+                    }}
+                    onClick={(e) => e.stopPropagation()}
+                    className="h-7 text-sm font-semibold border-0 p-0 focus-visible:ring-0 bg-transparent"
+                  />
+                )}
               </div>
-            ))}
-            <div className="flex justify-end pt-1 text-sm font-semibold">
-              Subtotal: {item.total_item.toFixed(2)}€
+              <span className="text-sm font-semibold shrink-0 ml-2">
+                {item.total_item.toFixed(2)}€
+              </span>
             </div>
-          </CardContent>
+          </CardHeader>
+
+          {!collapsed.has(itemIdx) && (
+            <CardContent className="space-y-2">
+              <div className="grid grid-cols-12 gap-2 text-xs font-medium text-muted-foreground pb-1">
+                <span className="col-span-4">Descrição</span>
+                <span className="col-span-2">Qtd.</span>
+                <span className="col-span-2">Unid.</span>
+                <span className="col-span-2 text-right">Unit. (€)</span>
+                <span className="col-span-1 text-right">Total</span>
+                <span className="col-span-1" />
+              </div>
+              {item.rubricas.map((r, rubIdx) => (
+                <div key={rubIdx} className="grid grid-cols-12 gap-2 items-center">
+                  {readOnly ? (
+                    <span className="col-span-4 text-xs truncate">{r.descricao}</span>
+                  ) : (
+                    <Input
+                      className="col-span-4 h-7 text-xs"
+                      value={r.descricao}
+                      onChange={(e) => updateRubrica(itemIdx, rubIdx, 'descricao', e.target.value)}
+                    />
+                  )}
+                  {readOnly ? (
+                    <span className="col-span-2 text-xs">{r.quantidade}</span>
+                  ) : (
+                    <Input
+                      className="col-span-2 h-7 text-xs"
+                      type="number"
+                      min={0}
+                      value={r.quantidade}
+                      onChange={(e) =>
+                        updateRubrica(itemIdx, rubIdx, 'quantidade', parseFloat(e.target.value) || 0)
+                      }
+                    />
+                  )}
+                  {readOnly ? (
+                    <span className="col-span-2 text-xs">{r.unidade}</span>
+                  ) : (
+                    <Input
+                      className="col-span-2 h-7 text-xs"
+                      value={r.unidade}
+                      onChange={(e) => updateRubrica(itemIdx, rubIdx, 'unidade', e.target.value)}
+                    />
+                  )}
+                  {readOnly ? (
+                    <span className="col-span-2 text-xs text-right">{r.custo_unitario.toFixed(2)}</span>
+                  ) : (
+                    <Input
+                      className="col-span-2 h-7 text-xs text-right"
+                      type="number"
+                      min={0}
+                      step={0.01}
+                      value={r.custo_unitario}
+                      onChange={(e) =>
+                        updateRubrica(
+                          itemIdx,
+                          rubIdx,
+                          'custo_unitario',
+                          parseFloat(e.target.value) || 0,
+                        )
+                      }
+                    />
+                  )}
+                  <span className="col-span-1 text-right text-xs font-mono">
+                    {r.custo_total.toFixed(0)}€
+                  </span>
+                  {readOnly ? (
+                    <span className="col-span-1" />
+                  ) : (
+                    <button
+                      className="col-span-1 text-muted-foreground hover:text-destructive text-xs"
+                      onClick={() => setConfirmRemove({ itemIdx, rubIdx })}
+                      title="Remover rubrica"
+                    >
+                      ✕
+                    </button>
+                  )}
+                </div>
+              ))}
+              {!readOnly && (
+                <div className="flex items-center justify-between pt-1">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-xs h-7"
+                    onClick={() => addRubrica(itemIdx)}
+                  >
+                    + Rubrica
+                  </Button>
+                </div>
+              )}
+            </CardContent>
+          )}
         </Card>
       ))}
 
+      {!readOnly && (
+        <Button variant="outline" size="sm" onClick={addItem}>
+          + Novo item
+        </Button>
+      )}
+
       <Separator />
 
-      <div className="flex items-center justify-between">
-        <span className="text-lg font-bold">Total Geral: {totalGeral.toFixed(2)}€</span>
-        <Button onClick={handleAccept} disabled={saving}>
-          {saving ? 'A guardar...' : 'Aceitar Estimativa'}
-        </Button>
+      {/* Global totals bar */}
+      <div className="rounded-md border p-4 space-y-3">
+        <div className="flex items-center justify-between text-sm">
+          <span className="font-medium">Total custos:</span>
+          <span className="font-bold font-mono">{totalGeral.toFixed(2)}€</span>
+        </div>
+        {!readOnly && (
+          <div className="flex items-center gap-3 text-sm flex-wrap">
+            <span className="font-medium shrink-0">Margem %:</span>
+            <Input
+              type="number"
+              min={0}
+              max={99}
+              step={0.1}
+              placeholder="0.0"
+              value={marginInput}
+              onChange={(e) => {
+                setMarginInput(e.target.value)
+                if (e.target.value !== '') {
+                  const margin = parseFloat(e.target.value)
+                  if (!isNaN(margin) && margin < 100) {
+                    setVendaInput((totalGeral / (1 - margin / 100)).toFixed(2))
+                  }
+                }
+              }}
+              className="w-24 h-7 text-sm"
+            />
+            <span className="text-muted-foreground">→</span>
+            <span className="font-medium shrink-0">Valor de venda:</span>
+            <Input
+              type="number"
+              min={0}
+              step={0.01}
+              placeholder="0.00"
+              value={vendaInput}
+              onChange={(e) => {
+                setVendaInput(e.target.value)
+                setMarginInput('')
+              }}
+              className="w-32 h-7 text-sm font-mono"
+            />
+            <span className="text-xs text-muted-foreground">€</span>
+            {marginFromVenda && (
+              <span className="text-xs text-muted-foreground">(margem: {marginFromVenda}%)</span>
+            )}
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7"
+              disabled={savingVenda || !vendaInput}
+              onClick={() => void handleApplyVenda(vendaInput)}
+            >
+              {savingVenda ? '...' : 'Aplicar'}
+            </Button>
+          </div>
+        )}
+        {readOnly && typeof valorVendaFinal === 'number' && (
+          <div className="flex items-center gap-6 text-sm">
+            <div>
+              <span className="text-muted-foreground">Valor de venda: </span>
+              <span className="font-semibold font-mono">{valorVendaFinal.toFixed(2)}€</span>
+            </div>
+            {marginFromVenda && (
+              <div>
+                <span className="text-muted-foreground">Margem: </span>
+                <span className="font-semibold">{marginFromVenda}%</span>
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Confirm remove rubrica dialog */}
+      <Dialog open={!!confirmRemove} onOpenChange={(open) => !open && setConfirmRemove(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Remover rubrica</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm">Tem a certeza que quer remover esta rubrica?</p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmRemove(null)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() =>
+                confirmRemove && removeRubrica(confirmRemove.itemIdx, confirmRemove.rubIdx)
+              }
+            >
+              Remover
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Confirm regenerate dialog */}
+      <Dialog open={confirmRegenerate} onOpenChange={(open) => !open && setConfirmRegenerate(false)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Regenerar estimativa</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm">
+            Tem a certeza? Será criada uma nova sessão de orçamentação e a estimativa actual será descartada.
+          </p>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setConfirmRegenerate(false)}>
+              Cancelar
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={() => {
+                setConfirmRegenerate(false)
+                onRegenerate?.()
+              }}
+            >
+              Regenerar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

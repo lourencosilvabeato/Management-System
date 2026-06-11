@@ -1,25 +1,23 @@
 'use client'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { Badge } from '@/components/ui/badge'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { useState, useEffect, useRef } from 'react'
+import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
+import { ChevronDownIcon } from 'lucide-react'
 import { EstimateEditor } from '../EstimateEditor'
 import { EstimateChat } from '../EstimateChat'
 import type { Proposal } from '@/payload-types'
 import type { EstimateOutput } from '@/lib/ai/parseEstimate'
 
-const CONFIANCA_VARIANT: Record<string, 'default' | 'secondary' | 'destructive'> = {
-  Alto: 'default',
-  Medio: 'secondary',
-  Baixo: 'destructive',
-}
+const LOADING_MESSAGES = [
+  'A analisar o briefing...',
+  'A consultar a base de conhecimento...',
+  'A calcular materiais e recursos...',
+  'A gerar estimativa inicial...',
+  'A finalizar orçamento...',
+]
 
-interface Props {
-  proposal: Proposal
-  onRefresh: () => void
-}
+const MAX_POLL_COUNT = 30
 
 interface ConversaMsg {
   role: 'user' | 'assistant'
@@ -27,51 +25,98 @@ interface ConversaMsg {
   timestamp: string
 }
 
-export function TabOrcamentacao({ proposal, onRefresh }: Props) {
-  const router = useRouter()
+interface Props {
+  proposal: Proposal
+  onRefresh: () => void
+}
 
+type SessaoOrcamentacao = NonNullable<Proposal['sessaoOrcamentacao']>[number]
+
+function getEstimativa(sessao: SessaoOrcamentacao): EstimateOutput['estimativa'] | null {
+  if (!sessao.estimativaAtual) return null
+  const est = sessao.estimativaAtual as unknown as EstimateOutput['estimativa']
+  if (!est?.items) return null
+  return est
+}
+
+function getMsgs(sessao: SessaoOrcamentacao): ConversaMsg[] {
+  return (sessao.conversaIA ?? []).map((m) => ({
+    role: m.role as 'user' | 'assistant',
+    content: m.content ?? '',
+    timestamp: m.timestamp ?? new Date().toISOString(),
+  }))
+}
+
+export function TabOrcamentacao({ proposal, onRefresh }: Props) {
   const sessoes = proposal.sessaoOrcamentacao ?? []
   const activeSessao = sessoes[sessoes.length - 1]
+  const previousSessoes = sessoes.length > 1 ? sessoes.slice(0, -1) : []
 
   const [currentEstimativa, setCurrentEstimativa] = useState<
     EstimateOutput['estimativa'] | null
-  >(() => {
-    if (!activeSessao?.estimativaAtual) return null
-    const est = activeSessao.estimativaAtual as unknown as EstimateOutput['estimativa']
-    if (!est?.items) return null
-    return est
-  })
-
+  >(() => (activeSessao ? getEstimativa(activeSessao) : null))
   const [abordagem, setAbordagem] = useState(activeSessao?.abordagemTecnica ?? '')
   const [nivelConfianca, setNivelConfianca] = useState(activeSessao?.nivelConfianca ?? '')
   const [nivelJustificacao, setNivelJustificacao] = useState(
     activeSessao?.nivelConfiancaJustificacao ?? '',
   )
-  const [conversaIA, setConversaIA] = useState<ConversaMsg[]>(() => {
-    return (activeSessao?.conversaIA ?? []).map((m) => ({
-      role: m.role as 'user' | 'assistant',
-      content: m.content ?? '',
-      timestamp: m.timestamp ?? new Date().toISOString(),
-    }))
-  })
+  const [conversaIA, setConversaIA] = useState<ConversaMsg[]>(() =>
+    activeSessao ? getMsgs(activeSessao) : [],
+  )
+
+  const [pollCount, setPollCount] = useState(0)
+  const [generationError, setGenerationError] = useState(false)
+  const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
+  const [previousOpen, setPreviousOpen] = useState(false)
+  const [regenerating, setRegenerating] = useState(false)
+
+  const onRefreshRef = useRef(onRefresh)
+  useEffect(() => {
+    onRefreshRef.current = onRefresh
+  }, [onRefresh])
 
   const estado = proposal.estado
+  const isReadOnly = estado === 'Ganha' || estado === 'Perdida'
+  const isGenerating =
+    (estado === 'EmOrcamentacao' && !currentEstimativa) || regenerating
 
-  if (estado !== 'EmOrcamentacao' && estado !== 'Enviada' && estado !== 'Ganha' && estado !== 'Perdida') {
-    return (
-      <div className="py-6 text-sm text-muted-foreground">
-        A proposta precisa de estar em estado <strong>Em Orçamentação</strong> para aceder a esta secção.
-      </div>
-    )
-  }
+  // Sync estimate from proposal when it arrives (polling completed)
+  useEffect(() => {
+    if (currentEstimativa) return
+    if (!activeSessao) return
+    const est = getEstimativa(activeSessao)
+    if (!est) return
+    setCurrentEstimativa(est)
+    setAbordagem(activeSessao.abordagemTecnica ?? '')
+    setNivelConfianca(activeSessao.nivelConfianca ?? '')
+    setNivelJustificacao(activeSessao.nivelConfiancaJustificacao ?? '')
+    setConversaIA(getMsgs(activeSessao))
+    setRegenerating(false)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [proposal.sessaoOrcamentacao])
 
-  if (!activeSessao) {
-    return (
-      <div className="py-6 text-sm text-muted-foreground">
-        Nenhuma sessão de orçamentação encontrada.
-      </div>
-    )
-  }
+  // Cycle loading messages
+  useEffect(() => {
+    if (!isGenerating) return
+    const interval = setInterval(() => {
+      setLoadingMsgIdx((prev) => (prev + 1) % LOADING_MESSAGES.length)
+    }, 3000)
+    return () => clearInterval(interval)
+  }, [isGenerating])
+
+  // Poll for estimate
+  useEffect(() => {
+    if (!isGenerating || generationError) return
+    if (pollCount >= MAX_POLL_COUNT) {
+      setGenerationError(true)
+      return
+    }
+    const timeout = setTimeout(() => {
+      setPollCount((prev) => prev + 1)
+      onRefreshRef.current()
+    }, 3000)
+    return () => clearTimeout(timeout)
+  }, [isGenerating, pollCount, generationError])
 
   const handleNewEstimate = (data: {
     estimativaAtual: Record<string, unknown>
@@ -88,97 +133,210 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     setConversaIA(data.conversaIA)
   }
 
-  const isReadOnly = estado === 'Ganha' || estado === 'Perdida'
+  const handleRegenerate = async () => {
+    setRegenerating(true)
+    setCurrentEstimativa(null)
+    setGenerationError(false)
+    setPollCount(0)
+    try {
+      await fetch(`/api/proposals/${proposal.id}/transition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ novoEstado: 'EmElaboracao' }),
+      })
+      await fetch(`/api/proposals/${proposal.id}/transition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ novoEstado: 'EmOrcamentacao' }),
+      })
+      onRefreshRef.current()
+    } catch {
+      setGenerationError(true)
+      setRegenerating(false)
+    }
+  }
 
+  // State: proposal not in a state where estimates are relevant
+  if (
+    estado !== 'EmOrcamentacao' &&
+    estado !== 'Enviada' &&
+    estado !== 'Ganha' &&
+    estado !== 'Perdida'
+  ) {
+    return (
+      <div className="py-6 text-sm text-muted-foreground">
+        A estimativa será gerada automaticamente quando a proposta avançar para estado{' '}
+        <strong>Em Orçamentação</strong>.
+      </div>
+    )
+  }
+
+  // State: no session at all
+  if (!activeSessao && !isGenerating) {
+    return (
+      <div className="py-6 text-sm text-muted-foreground">
+        Nenhuma sessão de orçamentação encontrada.
+      </div>
+    )
+  }
+
+  // State: generation error
+  if (generationError) {
+    return (
+      <div className="py-6 space-y-4">
+        <p className="text-sm text-destructive">
+          Não foi possível gerar a estimativa. Verifica se a API de IA está configurada.
+        </p>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setGenerationError(false)
+            setPollCount(0)
+            void handleRegenerate()
+          }}
+        >
+          Tentar novamente
+        </Button>
+      </div>
+    )
+  }
+
+  // State: generating (polling)
+  if (isGenerating) {
+    return (
+      <div className="py-8 flex flex-col items-center gap-4 text-center">
+        <div className="flex gap-1">
+          {[0, 1, 2].map((i) => (
+            <span
+              key={i}
+              className="w-2 h-2 rounded-full bg-primary animate-bounce"
+              style={{ animationDelay: `${i * 0.15}s` }}
+            />
+          ))}
+        </div>
+        <p className="text-sm text-muted-foreground animate-pulse">
+          {LOADING_MESSAGES[loadingMsgIdx]}
+        </p>
+        <p className="text-xs text-muted-foreground">
+          A estimativa pode demorar até 30 segundos.
+        </p>
+      </div>
+    )
+  }
+
+  // State: estimate available
   return (
     <div className="space-y-6 py-4">
-      {abordagem && (
-        <Card>
-          <CardHeader className="pb-2">
-            <div className="flex items-center justify-between">
-              <CardTitle className="text-sm">Abordagem Técnica</CardTitle>
-              {nivelConfianca && (
-                <Badge variant={CONFIANCA_VARIANT[nivelConfianca] ?? 'secondary'}>
-                  Confiança: {nivelConfianca}
-                </Badge>
-              )}
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <p className="text-sm">{abordagem}</p>
-            {nivelJustificacao && (
-              <p className="text-xs text-muted-foreground italic">{nivelJustificacao}</p>
-            )}
-          </CardContent>
-        </Card>
-      )}
-
-      {!currentEstimativa && (
-        <div className="py-4 text-sm text-muted-foreground animate-pulse">
-          A gerar estimativa inicial...
-        </div>
-      )}
-
       {currentEstimativa && (
-        <>
-          <div className="space-y-2">
-            <p className="text-sm font-semibold">Estimativa</p>
-            {isReadOnly ? (
-              <div className="text-sm text-muted-foreground">
-                Estimativa em modo de leitura (proposta {estado?.toLowerCase()}).
-              </div>
-            ) : (
-              <EstimateEditor
-                estimativa={currentEstimativa}
-                proposalId={String(proposal.id)}
-                onAccepted={() => router.refresh()}
-              />
-            )}
-          </div>
-
-          {proposal.estimativaEditada && (
-            <>
-              <Separator />
-              <div className="rounded-md bg-muted p-3 text-xs text-muted-foreground">
-                Estimativa aceite registada.
-              </div>
-            </>
-          )}
-
-          {!isReadOnly && (
-            <>
-              <Separator />
-              <div className="space-y-2">
-                <p className="text-sm font-semibold">Refinamento via IA</p>
-                <EstimateChat
-                  conversaIA={conversaIA}
-                  proposalId={String(proposal.id)}
-                  onNewEstimate={handleNewEstimate}
-                />
-              </div>
-            </>
-          )}
-        </>
+        <EstimateEditor
+          estimativa={currentEstimativa}
+          proposalId={String(proposal.id)}
+          valorVendaFinal={proposal.valorVendaFinal}
+          nivelConfianca={nivelConfianca || null}
+          nivelConfiancaJustificacao={nivelJustificacao || null}
+          abordagemTecnica={abordagem || null}
+          onAccepted={onRefresh}
+          onRegenerate={!isReadOnly ? handleRegenerate : undefined}
+          readOnly={isReadOnly}
+        />
       )}
 
-      {typeof proposal.valorVendaFinal === 'number' && (
+      {!isReadOnly && currentEstimativa && (
         <>
           <Separator />
-          <div className="flex items-center gap-6 text-sm">
-            <div>
-              <span className="text-muted-foreground">Valor de Venda: </span>
-              <span className="font-semibold">
-                {proposal.valorVendaFinal.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}€
-              </span>
-            </div>
-            {typeof proposal.margemCalculada === 'number' && (
-              <div>
-                <span className="text-muted-foreground">Margem: </span>
-                <span className="font-semibold">{proposal.margemCalculada.toFixed(1)}%</span>
+          <EstimateChat
+            conversaIA={conversaIA}
+            proposalId={String(proposal.id)}
+            onNewEstimate={handleNewEstimate}
+          />
+        </>
+      )}
+
+      {previousSessoes.length > 0 && (
+        <>
+          <Separator />
+          <div className="space-y-2">
+            <button
+              className="flex items-center gap-2 text-sm font-medium hover:text-primary transition-colors"
+              onClick={() => setPreviousOpen((v) => !v)}
+            >
+              <ChevronDownIcon
+                className={`h-4 w-4 transition-transform ${previousOpen ? '' : '-rotate-90'}`}
+              />
+              Ver sessões de orçamentação anteriores ({previousSessoes.length})
+            </button>
+
+            {previousOpen && (
+              <div className="space-y-4 pt-2">
+                {previousSessoes
+                  .slice()
+                  .reverse()
+                  .map((sessao, idx) => {
+                    const est = getEstimativa(sessao)
+                    if (!est) return null
+                    return (
+                      <PreviousSession
+                        key={sessao.id ?? idx}
+                        sessao={sessao}
+                        estimativa={est}
+                        proposalId={String(proposal.id)}
+                        index={previousSessoes.length - idx}
+                      />
+                    )
+                  })}
               </div>
             )}
           </div>
         </>
+      )}
+    </div>
+  )
+}
+
+function PreviousSession({
+  sessao,
+  estimativa,
+  proposalId,
+  index,
+}: {
+  sessao: NonNullable<Proposal['sessaoOrcamentacao']>[number]
+  estimativa: EstimateOutput['estimativa']
+  proposalId: string
+  index: number
+}) {
+  const [open, setOpen] = useState(false)
+
+  return (
+    <div className="rounded-md border">
+      <button
+        className="w-full flex items-center justify-between p-3 text-sm hover:bg-muted/50 transition-colors"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <span className="font-medium">Sessão #{index}</span>
+        <div className="flex items-center gap-3">
+          {sessao.nivelConfianca && (
+            <span className="text-xs text-muted-foreground">
+              Confiança: {sessao.nivelConfianca}
+            </span>
+          )}
+          <ChevronDownIcon
+            className={`h-4 w-4 transition-transform ${open ? '' : '-rotate-90'}`}
+          />
+        </div>
+      </button>
+      {open && (
+        <div className="p-4 border-t">
+          <EstimateEditor
+            estimativa={estimativa}
+            proposalId={proposalId}
+            nivelConfianca={sessao.nivelConfianca ?? null}
+            nivelConfiancaJustificacao={sessao.nivelConfiancaJustificacao ?? null}
+            abordagemTecnica={sessao.abordagemTecnica ?? null}
+            onAccepted={() => {}}
+            readOnly
+          />
+        </div>
       )}
     </div>
   )
