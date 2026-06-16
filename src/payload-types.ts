@@ -195,7 +195,7 @@ export interface Proposal {
   contactoEmail?: string | null;
   contactoTelefone?: string | null;
   prazoResposta?: string | null;
-  briefing: {
+  briefing?: {
     root: {
       type: string;
       children: {
@@ -209,7 +209,7 @@ export interface Proposal {
       version: number;
     };
     [k: string]: unknown;
-  };
+  } | null;
   /**
    * URL to Figma file — passed as text to the AI prompt
    */

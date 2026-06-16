@@ -103,13 +103,9 @@ export async function generateInitialEstimate(
   const parsed = await callAIWithRetry(messages)
 
   const now = new Date().toISOString()
-  const conversaIA: EstimateResult['conversaIA'] = [
-    { role: 'user', content: userMessage, timestamp: now },
-    { role: 'assistant', content: JSON.stringify(parsed), timestamp: now },
-  ]
 
   return {
-    conversaIA,
+    conversaIA: [],
     estimativaAtual: parsed.estimativa as unknown as Record<string, unknown>,
     abordagemTecnica: parsed.abordagem_tecnica,
     nivelConfianca: normalizeConfianca(parsed.nivel_confianca.nivel),
@@ -127,29 +123,57 @@ export async function continueConversation(
   proposal: Proposal,
   sessaoId: string,
   newMessage: string,
-  _payload: BasePayload,
+  payload: BasePayload,
 ): Promise<EstimateResult> {
   const sessoes = proposal.sessaoOrcamentacao ?? []
   const sessao = sessoes.find((s) => s.sessaoId === sessaoId)
   if (!sessao) throw new Error(`Session not found: ${sessaoId}`)
 
-  const existingHistory: Array<{ role: 'user' | 'assistant'; content: string }> = (
-    sessao.conversaIA ?? []
-  ).map((msg) => ({
-    role: msg.role as 'user' | 'assistant',
-    content: msg.content ?? '',
-  }))
+  // Rebuild initial prompt so the AI has full context on follow-up calls
+  const knowledgeBase = await fetchKnowledgeBase(payload)
+  const mockupUrls = getMockupUrls(proposal)
+  let imageDescription = ''
+  if (mockupUrls.length > 0) {
+    imageDescription = await analyzeImages(mockupUrls)
+  }
+  const initialPrompt = buildInitialPrompt(proposal, knowledgeBase, imageDescription)
 
+  // Reconstruct the initial AI response from stored session data
+  const initialAssistantContent = JSON.stringify({
+    abordagem_tecnica: sessao.abordagemTecnica ?? '',
+    nivel_confianca: {
+      nivel: sessao.nivelConfianca ?? 'Medio',
+      justificacao: sessao.nivelConfiancaJustificacao ?? '',
+    },
+    estimativa: sessao.estimativaAtual,
+  })
+
+  // Filter out old-format messages where the initial context prompt was stored in conversaIA
+  const rawConversaIA = sessao.conversaIA ?? []
+  const isOldFormat =
+    rawConversaIA.length >= 2 &&
+    rawConversaIA[0]?.role === 'user' &&
+    (rawConversaIA[0]?.content ?? '').startsWith('## Project')
+  const chatExchanges = isOldFormat ? rawConversaIA.slice(2) : rawConversaIA
+
+  // Full AI history: initial context + chat exchanges + new message
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-    ...existingHistory,
+    { role: 'user', content: initialPrompt },
+    { role: 'assistant', content: initialAssistantContent },
+    ...chatExchanges.map((msg) => ({
+      role: msg.role as 'user' | 'assistant',
+      content: msg.content ?? '',
+    })),
     { role: 'user', content: newMessage },
   ]
 
   const parsed = await callAIWithRetry(messages)
 
   const now = new Date().toISOString()
+
+  // Only store actual chat exchanges — never the initial context prompt
   const updatedConversaIA: EstimateResult['conversaIA'] = [
-    ...(sessao.conversaIA ?? []).map((msg) => ({
+    ...chatExchanges.map((msg) => ({
       role: msg.role as 'user' | 'assistant',
       content: msg.content ?? '',
       timestamp: msg.timestamp ?? now,

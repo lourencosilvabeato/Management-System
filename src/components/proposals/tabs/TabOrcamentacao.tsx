@@ -40,7 +40,13 @@ function getEstimativa(sessao: SessaoOrcamentacao): EstimateOutput['estimativa']
 }
 
 function getMsgs(sessao: SessaoOrcamentacao): ConversaMsg[] {
-  return (sessao.conversaIA ?? []).map((m) => ({
+  const raw = sessao.conversaIA ?? []
+  // Strip old-format entries where the initial AI context prompt was stored as conversaIA[0]
+  const isOldFormat =
+    raw.length >= 2 &&
+    raw[0]?.role === 'user' &&
+    (raw[0]?.content ?? '').startsWith('## Project')
+  return raw.slice(isOldFormat ? 2 : 0).map((m) => ({
     role: m.role as 'user' | 'assistant',
     content: m.content ?? '',
     timestamp: m.timestamp ?? new Date().toISOString(),

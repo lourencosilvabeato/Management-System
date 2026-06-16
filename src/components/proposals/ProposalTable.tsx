@@ -188,7 +188,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
       const body: Record<string, unknown> = {
         nomeProjeto: createForm.nomeProjeto.trim(),
         cliente: createForm.cliente.trim(),
-        account: createForm.accountId,
+        account: parseInt(createForm.accountId, 10),
       }
       if (createForm.briefing.trim()) {
         body.briefing = textToLexical(createForm.briefing.trim())

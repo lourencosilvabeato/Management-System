@@ -15,38 +15,53 @@ import type { Proposal } from '@/payload-types'
 type Estado = NonNullable<Proposal['estado']>
 type MotivoPerda = NonNullable<Proposal['motivoPerda']>
 
-const NEXT_STATES: Record<Estado, { estado: Estado; label: string; variant?: 'destructive'; confirmMsg?: string }[]> = {
+interface Transition {
+  estado: Estado
+  label: string
+  variant?: 'destructive'
+  confirmMsg?: string
+  allowedRoles: string[]
+}
+
+const ALL_TRANSITIONS: Record<Estado, Transition[]> = {
   Recebida: [
-    { estado: 'EmElaboracao', label: 'Iniciar Elaboração', confirmMsg: 'Avançar para Em Elaboração?' },
+    { estado: 'EmElaboracao', label: 'Iniciar Elaboração', confirmMsg: 'Avançar para Em Elaboração?', allowedRoles: ['account', 'admin'] },
   ],
   EmElaboracao: [
-    { estado: 'EmOrcamentacao', label: 'Avançar para Orçamentação', confirmMsg: 'Avançar para Em Orçamentação? Será gerada uma estimativa automática.' },
-    { estado: 'Recebida', label: 'Recuar para Recebida', confirmMsg: 'Recuar a proposta para Recebida?' },
+    { estado: 'EmOrcamentacao', label: 'Avançar para Orçamentação', confirmMsg: 'Avançar para Em Orçamentação? Será gerada uma estimativa automática.', allowedRoles: ['account', 'criativo', 'admin'] },
+    { estado: 'Recebida', label: 'Recuar para Recebida', confirmMsg: 'Recuar a proposta para Recebida?', allowedRoles: ['account', 'admin'] },
   ],
   EmOrcamentacao: [
-    { estado: 'Enviada', label: 'Marcar como Enviada', confirmMsg: 'Confirmar que a proposta foi enviada ao cliente?' },
-    { estado: 'EmElaboracao', label: 'Recuar para Elaboração', confirmMsg: 'Recuar a proposta para Em Elaboração?' },
+    { estado: 'Enviada', label: 'Marcar como Enviada', confirmMsg: 'Confirmar que a proposta foi enviada ao cliente?', allowedRoles: ['account', 'producao', 'admin'] },
+    { estado: 'EmElaboracao', label: 'Recuar para Elaboração', confirmMsg: 'Recuar a proposta para Em Elaboração?', allowedRoles: ['account', 'admin'] },
   ],
   Enviada: [
-    { estado: 'Ganha', label: 'Marcar como Ganha', confirmMsg: 'Confirmar que a proposta foi ganha?' },
-    { estado: 'Perdida', label: 'Marcar como Perdida', variant: 'destructive' },
-    { estado: 'EmOrcamentacao', label: 'Recuar para Orçamentação', confirmMsg: 'Recuar a proposta para Em Orçamentação?' },
+    { estado: 'Ganha', label: 'Marcar como Ganha', confirmMsg: 'Confirmar que a proposta foi ganha?', allowedRoles: ['account', 'admin'] },
+    { estado: 'Perdida', label: 'Marcar como Perdida', variant: 'destructive', allowedRoles: ['account', 'admin'] },
+    { estado: 'EmOrcamentacao', label: 'Recuar para Orçamentação', confirmMsg: 'Recuar a proposta para Em Orçamentação?', allowedRoles: ['account', 'admin'] },
   ],
   Ganha: [],
   Perdida: [],
 }
 
+interface CurrentUser {
+  role: string
+}
+
 interface Props {
   proposal: Proposal
+  currentUser: CurrentUser
   onSuccess: () => void
 }
 
-export function StateSelector({ proposal, onSuccess }: Props) {
+export function StateSelector({ proposal, currentUser, onSuccess }: Props) {
   const [loading, setLoading] = useState(false)
   const [lossModalOpen, setLossModalOpen] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<{ estado: Estado; msg: string } | null>(null)
 
-  const nextStates = NEXT_STATES[proposal.estado as Estado] ?? []
+  const nextStates = (ALL_TRANSITIONS[proposal.estado as Estado] ?? []).filter((t) =>
+    t.allowedRoles.includes(currentUser.role),
+  )
   if (nextStates.length === 0) return null
 
   const doTransition = async (novoEstado: Estado, motivoPerda?: MotivoPerda, detalhePerda?: string) => {

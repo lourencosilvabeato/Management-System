@@ -79,7 +79,7 @@ export function EstimateEditor({
   const [vendaInput, setVendaInput] = useState(
     typeof valorVendaFinal === 'number' ? String(valorVendaFinal) : '',
   )
-  const [collapsed, setCollapsed] = useState<Set<number>>(new Set())
+  const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set(initialItems.map((_, i) => i)))
   const [approachExpanded, setApproachExpanded] = useState(false)
 
   const totalGeral = calcGeral(items)

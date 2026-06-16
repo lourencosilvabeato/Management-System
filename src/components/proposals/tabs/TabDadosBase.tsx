@@ -100,7 +100,7 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
         contactoNome: form.contactoNome.trim() || null,
         contactoEmail: form.contactoEmail.trim() || null,
         contactoTelefone: form.contactoTelefone.trim() || null,
-        account: form.accountId || undefined,
+        account: form.accountId ? parseInt(form.accountId, 10) : undefined,
         prazoResposta: form.prazoResposta || null,
         briefing: form.briefing.trim() ? textToLexical(form.briefing) : null,
         condicoesPagamento: form.condicoesPagamento.trim() || null,

@@ -102,7 +102,6 @@ export const Proposals: CollectionConfig = {
       type: 'relationship',
       relationTo: 'users',
       required: true,
-      filterOptions: () => ({ role: { equals: 'account' } }),
       admin: { position: 'sidebar' },
     },
     {

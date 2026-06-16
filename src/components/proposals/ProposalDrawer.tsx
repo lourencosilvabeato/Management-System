@@ -135,7 +135,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
 
         {/* State transitions */}
         <div className="mt-4">
-          <StateSelector proposal={proposal} onSuccess={handleRefresh} />
+          <StateSelector proposal={proposal} currentUser={currentUser} onSuccess={handleRefresh} />
         </div>
       </div>
 
