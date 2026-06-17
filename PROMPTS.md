@@ -15,8 +15,6 @@ Git commits and pushes are handled automatically by Claude Code as defined in CL
 - [ ] API access confirmed: Anthropic, OpenAI, Cloudflare R2
 - [ ] GitHub repository cloned: https://github.com/lourencosilvabeato-blip/Sistema-NIU
 - [ ] .gitignore includes .env.local before first commit
-- [ ] Atlassian connected: https://innovagency.atlassian.net/wiki/spaces/IPN/pages/1396080641/Tentativa+de+Especifica+o+Funcional+do+Prot+tipo
-
 
 ---
 
@@ -669,3 +667,449 @@ Flow 5 — Access control:
 - Image upload to R2 and URL accessible in frontend
 - AI timeout not handled correctly
 - TanStack Query not invalidating after mutations
+
+---
+
+## PROMPT 13 — Pre-API verification and testing guide
+
+### Context
+The AI API keys (Anthropic and OpenAI) are not yet available.
+Everything else — collections, hooks, endpoints, UI, mocks — should be fully implemented.
+This prompt has two parts:
+1. Claude Code audits the codebase and reports what is and is not correctly implemented
+2. Claude Code generates a step-by-step manual testing guide specific to this project
+
+Do both parts in order. Do not skip the audit.
+
+---
+
+### Part 1 — Codebase audit
+
+Go through every item in this checklist. For each item, report one of three states:
+- DONE — correctly implemented and complete
+- PARTIAL — exists but incomplete or has issues (describe what is missing)
+- MISSING — not implemented at all
+
+Do not assume something is done without reading the actual file.
+Read every file listed before reporting its status.
+
+#### Collections
+- [ ] src/collections/Proposals.ts — all fields from CLAUDE.md present, correct types, access control per role
+- [ ] src/collections/Users.ts — role enum correct, auth configured
+- [ ] src/collections/Materials.ts — all fields present, admin-only write access
+- [ ] src/collections/Machines.ts — all fields present, admin-only write access
+- [ ] src/collections/InternalRates.ts — all fields present, admin-only write access
+- [ ] src/collections/ProjectLibrary.ts — all fields present, admin-only write access
+- [ ] payload.config.ts — all collections registered, S3 plugin configured
+
+#### Hooks
+- [ ] src/hooks/beforeChange/generateProposalNumber.ts — PROP-YYYY-NNN format, sequential per year, not overwritten on edit
+- [ ] src/hooks/beforeChange/validateTransition.ts — all state machine rules enforced, role checks, motivoPerda required for Perdida
+- [ ] src/hooks/afterChange/logActivity.ts — all relevant events logged, append-only, no infinite loop risk
+- [ ] src/hooks/afterChange/generateEstimate.ts — triggers only on EmOrcamentacao transition, fire-and-forget, calls mock correctly
+
+#### AI library (mocks)
+- [ ] src/lib/ai/claudeClient.ts — mock function returns valid JSON matching CLAUDE.md schema, TODO comment present
+- [ ] src/lib/ai/openaiClient.ts — mock function returns plausible image description text, TODO comment present
+- [ ] src/lib/ai/buildPrompt.ts — assembles all inputs into structured message, handles empty fields gracefully
+- [ ] src/lib/ai/parseEstimate.ts — validates JSON structure, cleans backticks, throws descriptive errors
+- [ ] src/lib/ai/analyzeImages.ts — calls mock, handles download failures gracefully
+- [ ] src/lib/ai/generateEstimateForProposal.ts — both functions implemented, calls mocks, saves correctly to session
+- [ ] src/lib/ai/prompts/estimateSystem.ts — system prompt written in Portuguese, all rules and output format defined
+
+#### Custom endpoints
+- [ ] src/app/api/proposals/[id]/transition/route.ts — validates auth, calls payload.update, hook handles validation, returns updated proposal
+- [ ] src/app/api/proposals/[id]/chat/route.ts — validates state and active session, calls continueConversation, updates conversaIA and estimativaAtual
+- [ ] src/app/api/proposals/[id]/estimate/accept/route.ts — validates structure, calculates totals and margin, records in activityLog
+
+#### UI — List (A01)
+- [ ] src/app/(frontend)/propostas/page.tsx — Server Component, fetches via Local API, passes initial props
+- [ ] src/components/proposals/ProposalKPIs.tsx — 4 KPI cards with correct metrics
+- [ ] src/components/proposals/ProposalFilters.tsx — text search with debounce, estado select, result counter
+- [ ] src/components/proposals/ProposalTable.tsx — all columns correct, badge colours, clickable rows, empty/error/loading states, New Proposal modal
+
+#### UI — Detail (A02)
+- [ ] src/components/proposals/ProposalDrawer.tsx — 680px Sheet, correct header, tabs with role visibility, auto-refetch
+- [ ] src/components/proposals/StateSelector.tsx — shows correct transitions per role and state, confirmation dialogs
+- [ ] src/components/proposals/LossModal.tsx — all motivo options, detail textarea, validation before submit
+- [ ] src/components/proposals/tabs/TabDadosBase.tsx — all fields, read-only for criativo, file attachments, save button
+- [ ] src/components/proposals/tabs/TabCriativa.tsx — mockup grid, versioning, estadoCriativo, figmaLink, save button
+- [ ] src/components/proposals/tabs/TabColaboracao.tsx — comments feed, optimistic update, ActivityLog component
+- [ ] src/components/proposals/ActivityLog.tsx — chronological, read-only, correct timestamp format
+- [ ] src/components/proposals/tabs/TabOrcamentacao.tsx — all states handled (not in state, generating, active session, error, previous sessions)
+- [ ] src/components/proposals/EstimateEditor.tsx — collapsible items, editable rubricas, real-time totals, margin input, unsaved indicator, accept/regenerate buttons
+- [ ] src/components/proposals/EstimateChat.tsx — message feed, user/assistant styling, no raw JSON shown, example prompts, shared state with editor
+
+#### Seed
+- [ ] src/seed.ts — all entities created (4 users, 15+ materials, 6+ machines, 4+ rates, 3 project library entries, 6 proposals in different states)
+
+After completing the audit, output a summary in this exact format:
+
+AUDIT SUMMARY
+=============
+DONE:    X items
+PARTIAL: X items — [list them with one-line description of what is missing]
+MISSING: X items — [list them]
+
+OVERALL STATUS: Ready to test / Needs fixes before testing
+
+If there are PARTIAL or MISSING items, fix them before proceeding to Part 2.
+Only move to Part 2 when all items are DONE.
+
+---
+
+### Part 2 — Step-by-step testing guide
+
+After the audit passes, produce a testing guide tailored to the actual state of the codebase.
+Use the actual URLs, actual field names, and actual enum values from this project.
+Do not write generic steps.
+
+#### Setup
+- Confirm npm run dev is running without errors on http://localhost:3000
+- Confirm Payload admin UI loads at http://localhost:3000/admin
+- Run npm run seed and confirm terminal output shows all entities created
+- Note the four test credentials from the seed output
+
+#### Test 1 — Payload admin UI baseline
+Login as admin@niu.pt at /admin.
+Confirm all 6 collections appear in the sidebar: Proposals, Users, Materials, Machines, InternalRates, ProjectLibrary.
+Open Materials — confirm 15+ entries with nome, unidade, custoMedio fields populated.
+Open Users — confirm 4 users exist with roles: admin, account, criativo, producao.
+Create a new Material entry manually and confirm it saves and appears in the list.
+Open InternalRates — confirm entries exist with custoHora values.
+
+#### Test 2 — Proposal creation and numbering
+Navigate to http://localhost:3000/propostas and login as account@niu.pt.
+Confirm the 4 KPI cards load with numbers derived from the seed proposals.
+Confirm the proposals table shows proposals from the seed with correct columns and badge colours.
+Click "New Proposal" — fill nomeProjeto and cliente — submit.
+Confirm the new proposal appears in the table with estado = Recebida and a badge in grey.
+Confirm the numero field shows PROP-2026-NNN format, sequential after the last seed proposal.
+Click the new proposal row — confirm the drawer opens at 680px width with the correct header.
+
+#### Test 3 — State transitions and validation
+With the new proposal open in estado = Recebida:
+Confirm StateSelector shows only one forward option: advance to Em Elaboração.
+Click advance — confirm the estado badge in the drawer header updates to Em Elaboração (blue).
+Open the Activity Log tab — confirm an entry reads "State changed from Recebida to EmElaboracao" with timestamp and user.
+Click back to Recebida — confirm the regression works and is also logged.
+Advance again to Em Elaboração, then forward to Em Orçamentação.
+Confirm a budgeting session is created and the mock estimate appears in the Budgeting tab within a few seconds.
+Verify the mock estimate structure: abordagem_tecnica text is visible, nivelConfianca badge shows Médio, items table has at least 2 items each with rubricas.
+Continue advancing to Enviada.
+Click "Mark as Lost" — confirm LossModal opens.
+Try to submit without selecting a motivo — confirm validation blocks the submission.
+Select "Preço" — confirm — verify estado badge shows Perdida (red) and no transition buttons remain.
+
+#### Test 4 — Creative zone and access control
+Login as criativo@niu.pt.
+Open a proposal in Em Elaboração state.
+Confirm the Budgeting tab is not visible in the tab list.
+Go to Base Data tab — confirm all input fields are disabled or read-only.
+Go to Creative Zone tab — confirm memoriacriativa textarea and maquetes upload are editable.
+Type in the memoriacriativa field and save — confirm it persists on drawer close and reopen.
+Change estadoCriativo select to Em Revisão — save — confirm the change persists.
+Upload a small test image as a mockup — confirm it appears as a card in the grid with "Active version" label.
+Login as producao@niu.pt — confirm the Budgeting tab is visible and the estimate table is editable.
+Confirm producao does not see the "New Proposal" button in the top right.
+
+#### Test 5 — Mock AI estimate and iterative chat
+Login as account@niu.pt.
+Open any proposal and advance it to Em Orçamentação (or use the seed proposal already in that state).
+Go to the Budgeting tab — confirm a brief loading state appears then the mock estimate loads.
+Confirm the estimate shows: abordagem_tecnica paragraph, nivelConfianca = Médio badge with justification text, collapsible item blocks each with a rubrica table.
+Click on an item header to collapse and expand it — confirm it works.
+Edit a quantidade value in a rubrica — confirm the item total and grand total recalculate immediately without saving.
+Edit the margin percentage input in the totals bar — confirm the sale value recalculates.
+Confirm the "unsaved changes" indicator appears.
+Click "Save changes" — confirm it disappears and the data persists on reload.
+Type a message in the EstimateChat input: "Add transport to Lisbon" — submit.
+Confirm a mock response appears in the chat feed with assistant styling (left-aligned, grey background).
+Confirm the estimate table reflects the updated mock response.
+Confirm the user message appears right-aligned in the chat feed.
+Type a second message — confirm both previous messages remain in the feed (history preserved).
+Click "Accept estimate" — confirm the activityLog records "Estimate accepted and manually edited".
+
+#### Test 6 — Comments and collaboration
+Open any proposal and go to the Collaboration tab.
+Type a comment and press Enter — confirm it appears immediately before the server responds (optimistic update).
+Close the drawer and reopen it — confirm the comment persists.
+Confirm the Activity Log section below the comments shows a complete chronological list of all events from previous tests.
+Confirm there are no edit or delete options on any log entry.
+
+#### Test 7 — Filters and search
+Return to /propostas.
+Type part of a seed proposal project name in the search box — confirm results filter after the debounce delay (roughly 300ms after you stop typing).
+Select "Enviada" from the estado dropdown — confirm only proposals in that state appear.
+Combine the text search with the estado filter — confirm both apply simultaneously.
+Clear all filters — confirm the full list returns.
+Check the result counter text updates correctly with each filter change.
+
+#### Test 8 — Complete happy path
+Run the full flow without stopping:
+1. Login as account@niu.pt — create new proposal with nomeProjeto "Happy Path Test" and cliente "Test Client"
+2. Advance to Em Elaboração
+3. Switch to criativo@niu.pt — open the proposal — fill memoriacriativa with any text — set estadoCriativo to Aprovado — save
+4. Switch back to account@niu.pt — advance to Em Orçamentação
+5. Go to Budgeting tab — wait for mock estimate to load
+6. Type a follow-up in EstimateChat — confirm response arrives
+7. Edit one rubrica quantidade — confirm totals update
+8. Fill in valorVendaFinal with any number — confirm margemCalculada appears next to it
+9. Click Accept estimate
+10. Advance to Enviada — then to Ganha
+11. Confirm estado = Ganha, no transition buttons visible
+12. Open Activity Log — confirm it has a complete record of every step in chronological order
+
+#### What to ignore during testing
+- File upload previews may not load without real R2 credentials — uploads can still be submitted, the URL just will not resolve
+- AI responses return hardcoded mock data — the content is always the same regardless of the briefing input
+- Emails will not be sent without RESEND_API_KEY — this is expected
+- If any error message mentions ANTHROPIC_API_KEY or OPENAI_API_KEY, a mock is not correctly wired — report it as a bug to fix before the real keys arrive
+
+---
+
+## PROMPT 14 — NIU brand design system
+
+### Context
+Redesign the entire frontend to match the NIU brand identity.
+The design must feel like a professional internal tool built by NIU — not a generic SaaS dashboard.
+This prompt covers the full visual overhaul: tokens, typography, layout, all components and pages.
+
+Do not start implementing until you have completed the research phase described below.
+
+If you have any questions or things that you think that aren't correct (not the same format as the website) ask before implementing.
+
+---
+
+### Phase 1 — Brand research (do this first, before any code)
+
+Visit and analyse the following pages. Read the actual rendered styles using browser tools or by inspecting the page source. Extract the exact values before writing any code.
+
+Pages to analyse:
+- https://niu.pt/
+- https://niu.pt/pagina-principal/sobre-nos/
+- https://niu.pt/pagina-principal/portfolio/
+- https://niu.pt/pagina-principal/contactos/
+
+For each page, extract and document:
+- Background colours (hex values)
+- Text colours (hex values, by hierarchy — heading, body, secondary, muted)
+- Accent / highlight colours (buttons, hover states, underlines, dividers)
+- Font families used (check the CSS font-family declarations)
+- Font weights used for headings vs body
+- Letter-spacing values on headings
+- Border radius values on interactive elements
+- Spacing rhythm (padding and margin patterns)
+- Navigation bar style (height, background, border)
+- Any use of red, orange or other accent colours
+
+After extracting, output a brand audit document in this format before writing any code:
+
+BRAND AUDIT — NIU
+=================
+Background primary:   #______
+Background secondary: #______
+Background card:      #______
+Text primary:         #______
+Text secondary:       #______
+Text muted:           #______
+Accent primary:       #______
+Accent hover:         #______
+Border colour:        #______
+Font heading:         ______
+Font body:            ______
+Heading weight:       ______
+Heading letter-spacing: ______
+Border radius (buttons): ______
+Border radius (cards):   ______
+
+Wait for confirmation of these values before proceeding to Phase 2.
+
+---
+
+### Phase 2 — Design tokens
+
+After the brand audit is confirmed, set up the full design token system.
+
+#### Tailwind config (tailwind.config.ts)
+Extend the theme with NIU brand tokens:
+
+Colours to define:
+- niu-black: the near-black from the website (background on dark areas, primary buttons, active states)
+- niu-white: the off-white used for text on dark backgrounds
+- #333333 (dark hover): darker variant for button hover states
+- niu-gray-50 through niu-gray-900: a neutral grey scale for the light theme
+- niu-surface: main page background (white or very light grey)
+- niu-surface-raised: card and panel background (slightly off-white)
+- niu-surface-overlay: drawer and modal background
+- niu-border: default border colour
+- niu-border-strong: stronger border for emphasis
+
+Typography to define:
+- fontFamily.heading: Montserrat (Google Fonts) — used for all headings, labels, navigation
+- fontFamily.body: Inter (Google Fonts) — used for all body text, inputs, tables
+- fontFamily.mono: JetBrains Mono — used for proposal numbers and code
+
+#### Global CSS (src/app/globals.css)
+Import Google Fonts: Montserrat (weights 400, 500, 600, 700) and Inter (weights 400, 500, 600).
+Define CSS custom properties that mirror the Tailwind tokens for use in any non-Tailwind context.
+Set the base font to Inter across the application.
+Set heading elements (h1–h4) to Montserrat with the correct letter-spacing extracted from the website.
+
+#### Logo
+The logo file provided by the user should be placed in src/assets/logo-niu.svg (or the format provided).
+It is used in the sidebar and login page only.
+Do not use it as a favicon — create a simple text-based favicon instead.
+
+---
+
+### Phase 3 — Layout shell
+
+Redesign the application shell to match NIU's visual language.
+
+#### Overall layout
+The application uses a fixed left sidebar + main content area layout.
+The sidebar is narrow (220px), dark — using niu-black as background with white text and navigation items.
+This is intentional: the dark sidebar anchors the NIU brand identity without making the whole tool dark,
+keeping it comfortable for daily use.
+The main content area uses niu-surface (light) as its background.
+
+#### Sidebar (src/components/layout/Sidebar.tsx)
+Background: niu-black
+Logo: NIU logo file at the top, white version, with "Gestão" in small Montserrat text beneath it
+Navigation items: white text, Montserrat font, uppercase, letter-spacing matching the website nav
+Active state: white left border (4px) + slightly lighter background (since sidebar background IS already niu-black)
+Hover state: subtle white overlay at low opacity
+Bottom: user name and role in small muted text
+Section labels: all-caps, very muted, small Montserrat, matching the website's section styling
+
+#### Top bar (src/components/layout/TopBar.tsx)
+Background: niu-surface (white/off-white)
+Bottom border: niu-border, 1px
+Page title: Montserrat, font-weight 600, uppercase, letter-spacing wide — matching website headings
+Action buttons positioned right
+Height: 56px
+
+#### Page background
+niu-surface — clean, light, uncluttered
+
+---
+
+### Phase 4 — Component redesign
+
+Redesign every component to use the NIU token system.
+Do not change any functionality — only visual styles.
+
+#### Badges (estado colours)
+These must remain colour-coded for readability but styled with the NIU aesthetic:
+- Recebida: light grey background, dark grey text — neutral, not started
+- EmElaboracao: light blue tint, blue text
+- EmOrcamentacao: light purple tint, purple text
+- Enviada: light amber tint, amber text
+- Ganha: light green tint, dark green text
+- Perdida: light red tint, niu-red text
+All badges: Montserrat font, uppercase, font-weight 600, tight letter-spacing, no border-radius (square or very minimal radius — matching NIU's geometric aesthetic)
+
+#### Buttons
+Primary button: niu-black background, white text, Montserrat, uppercase, font-weight 600, letter-spacing wide, 0 or minimal border-radius
+Primary hover: #333333 (dark hover) background
+Secondary button: transparent background, niu-border border, dark text, same typography
+Destructive button: used for Perdida actions — deeper red, white text
+No rounded pill buttons — NIU's aesthetic is geometric and sharp
+
+#### Cards and panels
+Background: niu-surface-raised
+Border: 1px niu-border
+Border radius: minimal (4px maximum) — NIU uses sharp corners
+No drop shadows — use borders and background contrast instead
+
+#### Table (ProposalTable)
+Header row: niu-gray-100 background, Montserrat uppercase labels, letter-spacing wide, small font size
+Body rows: white background, Inter font, comfortable row height
+Row hover: niu-gray-50 background
+Bottom border on each row: 1px niu-border
+Selected row: niu-red left border (4px) + niu-gray-50 background
+Proposal number column: JetBrains Mono font, niu-gray-500 colour
+
+#### KPI cards (ProposalKPIs)
+White background, 1px niu-border border, sharp corners
+Label: Montserrat, uppercase, small, niu-gray-500
+Value: Montserrat, large, font-weight 700, niu-black
+Sub-label: Inter, small, niu-gray-400
+No icons — NIU's style is typographic, not icon-heavy
+
+#### Drawer (ProposalDrawer)
+Width: 720px
+Background: white
+Left border: 4px solid niu-black — the single strongest brand moment in the interface
+Header: white background, proposal number in mono/muted, project name in Montserrat h2, metadata in small Inter
+Tabs: Montserrat, uppercase, letter-spacing wide, active tab has niu-black underline (3px)
+No rounded corners on the drawer itself
+
+#### Forms and inputs
+Border: 1px niu-border
+Border radius: 2px — sharp
+Focus ring: niu-black border, no glow
+Label: Montserrat, uppercase, small, font-weight 600, letter-spacing
+Placeholder: niu-gray-400, Inter
+Background: white
+
+#### StateSelector
+The stepper uses a minimal horizontal line with dots.
+Completed steps: niu-black dot
+Current step: niu-black dot with label in Montserrat bold
+Pending steps: niu-gray-300 dot
+The line connecting steps: 1px, niu-gray-200 for pending, niu-black for completed
+
+#### EstimateEditor
+Table uses the same table tokens as ProposalTable.
+Editable cells: on focus, show niu-black bottom border only (underline style) — not a full box
+Totals bar: strong niu-black top border (3px) + light background — for emphasis
+Accept button: niu-black, prominent
+
+#### EstimateChat
+User messages: niu-black background, white text — strong brand moment
+Assistant messages: niu-gray-100 background, niu-black text
+Input area: clean white, niu-black send button
+
+#### LossModal
+The modal itself: white, sharp corners, 4px niu-black top border
+Confirm button: destructive (red) — this is a destructive action, correct by convention
+
+---
+
+### Phase 5 — Login page
+
+The login page is the first thing users see. It must be the most on-brand screen.
+
+Layout: split screen — left half dark (niu-black), right half light (white)
+Left half:
+- NIU logo (white version) centred
+- Tagline text in Montserrat, white, all-caps, wide letter-spacing
+- Decorative element — a large, very subtle NIU wordmark or geometric shape at low opacity in the background
+
+Right half:
+- "Gestão de Propostas" heading in Montserrat, niu-black, all-caps
+- Email and password inputs (styled as per Phase 4 inputs)
+- Login button full-width, niu-red, Montserrat uppercase
+- Very minimal — no decorations, just the form
+
+---
+
+### Phase 6 — Final consistency pass
+
+After all components are redesigned, do a full pass to check:
+- Every font usage is either Montserrat (headings, labels, nav, buttons) or Inter (body, inputs, data)
+- Every proposal number uses JetBrains Mono
+- No rounded corners beyond 4px anywhere in the interface
+- No drop shadows — only border and background contrast
+- The niu-black accent is used consistently: primary buttons, active states, drawer left border, focused inputs, chat user messages, totals bar top border
+- The sidebar is always dark (niu-black) regardless of the rest of the page
+- All-caps + wide letter-spacing is used consistently on headings and labels — this is the strongest NIU typographic signature
+
+### Important notes
+- Do not change any TypeScript logic, props, state, or data fetching — visual only
+- Do not change any Payload collections, hooks or endpoints
+- Do not change component file names or export names
+- If a Shadcn component requires overriding its default styles, do it via Tailwind classes on the component, not by modifying the Shadcn source
+- After completing all phases, commit: "[Prompt 14] NIU brand design system — full frontend redesign"

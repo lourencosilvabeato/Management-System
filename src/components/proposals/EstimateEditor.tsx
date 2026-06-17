@@ -223,7 +223,7 @@ export function EstimateEditor({
           </div>
           {!readOnly && (
             <div className="flex gap-2 shrink-0">
-              <Button size="sm" onClick={() => void handleAccept()} disabled={saving}>
+              <Button size="sm" onClick={() => void handleAccept()} disabled={saving} className="btn-niu">
                 {saving ? 'A guardar...' : 'Aceitar estimativa'}
               </Button>
               {onRegenerate && (
@@ -245,7 +245,7 @@ export function EstimateEditor({
             </p>
             {showApproachToggle && (
               <button
-                className="text-xs text-primary hover:underline"
+                className="text-xs text-[#000000] underline hover:text-[#333333]"
                 onClick={() => setApproachExpanded((v) => !v)}
               >
                 {approachExpanded ? 'Ver menos' : 'Ver mais'}
@@ -255,7 +255,7 @@ export function EstimateEditor({
         )}
 
         {hasUnsavedChanges && !readOnly && (
-          <Badge variant="outline" className="text-orange-600 border-orange-300">
+          <Badge variant="outline" className="text-[#666666] border-[#cccccc]">
             Alterações não guardadas
           </Badge>
         )}
@@ -397,7 +397,7 @@ export function EstimateEditor({
       <Separator />
 
       {/* Global totals bar */}
-      <div className="rounded-md border p-4 space-y-3">
+      <div style={{ border: '1px solid #eeeeee', borderTop: '3px solid #000000', borderRadius: 2, padding: 16 }} className="space-y-3">
         <div className="flex items-center justify-between text-sm">
           <span className="font-medium">Total custos:</span>
           <span className="font-bold font-mono">{totalGeral.toFixed(2)}€</span>

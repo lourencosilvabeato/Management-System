@@ -1,86 +1,81 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: var(--font-sans);
-    --color-sidebar-ring: var(--sidebar-ring);
-    --color-sidebar-border: var(--sidebar-border);
-    --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
-    --color-sidebar-accent: var(--sidebar-accent);
-    --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
-    --color-sidebar-primary: var(--sidebar-primary);
-    --color-sidebar-foreground: var(--sidebar-foreground);
-    --color-sidebar: var(--sidebar);
-    --color-chart-5: var(--chart-5);
-    --color-chart-4: var(--chart-4);
-    --color-chart-3: var(--chart-3);
-    --color-chart-2: var(--chart-2);
-    --color-chart-1: var(--chart-1);
-    --color-ring: var(--ring);
-    --color-input: var(--input);
-    --color-border: var(--border);
-    --color-destructive: var(--destructive);
-    --color-accent-foreground: var(--accent-foreground);
-    --color-accent: var(--accent);
-    --color-muted-foreground: var(--muted-foreground);
-    --color-muted: var(--muted);
+    --font-heading: 'Montserrat', sans-serif;
+    --font-body:    'Inter', sans-serif;
+    --font-sans:    'Inter', sans-serif;
+    --font-mono:    'JetBrains Mono', monospace;
+
+    --color-sidebar-ring:                var(--sidebar-ring);
+    --color-sidebar-border:              var(--sidebar-border);
+    --color-sidebar-accent-foreground:   var(--sidebar-accent-foreground);
+    --color-sidebar-accent:              var(--sidebar-accent);
+    --color-sidebar-primary-foreground:  var(--sidebar-primary-foreground);
+    --color-sidebar-primary:             var(--sidebar-primary);
+    --color-sidebar-foreground:          var(--sidebar-foreground);
+    --color-sidebar:                     var(--sidebar);
+    --color-ring:                var(--ring);
+    --color-input:               var(--input);
+    --color-border:              var(--border);
+    --color-destructive:         var(--destructive);
+    --color-accent-foreground:   var(--accent-foreground);
+    --color-accent:              var(--accent);
+    --color-muted-foreground:    var(--muted-foreground);
+    --color-muted:               var(--muted);
     --color-secondary-foreground: var(--secondary-foreground);
-    --color-secondary: var(--secondary);
-    --color-primary-foreground: var(--primary-foreground);
-    --color-primary: var(--primary);
-    --color-popover-foreground: var(--popover-foreground);
-    --color-popover: var(--popover);
-    --color-card-foreground: var(--card-foreground);
-    --color-card: var(--card);
-    --color-foreground: var(--foreground);
-    --color-background: var(--background);
-    --radius-sm: calc(var(--radius) * 0.6);
-    --radius-md: calc(var(--radius) * 0.8);
+    --color-secondary:           var(--secondary);
+    --color-primary-foreground:  var(--primary-foreground);
+    --color-primary:             var(--primary);
+    --color-popover-foreground:  var(--popover-foreground);
+    --color-popover:             var(--popover);
+    --color-card-foreground:     var(--card-foreground);
+    --color-card:                var(--card);
+    --color-foreground:          var(--foreground);
+    --color-background:          var(--background);
+    --radius-sm: calc(var(--radius) * 1);
+    --radius-md: calc(var(--radius) * 1);
     --radius-lg: var(--radius);
-    --radius-xl: calc(var(--radius) * 1.4);
-    --radius-2xl: calc(var(--radius) * 1.8);
-    --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
+    --radius-xl: calc(var(--radius) * 1);
+    --radius-2xl: calc(var(--radius) * 1);
+    --radius-3xl: calc(var(--radius) * 1);
+    --radius-4xl: calc(var(--radius) * 1);
 }
 
-/* ── Light — NIU clean warm white + electric orange ───────── */
+/* ── NIU brand — black/white, faithful to niu.pt ── */
 :root {
-    --background:           oklch(0.975 0.005 58);
-    --foreground:           oklch(0.12  0.010 45);
-    --card:                 oklch(1     0     0);
-    --card-foreground:      oklch(0.12  0.010 45);
-    --popover:              oklch(1     0     0);
-    --popover-foreground:   oklch(0.12  0.010 45);
-    --primary:              oklch(0.60  0.230 38);
-    --primary-foreground:   oklch(0.99  0     0);
-    --secondary:            oklch(0.95  0.005 56);
-    --secondary-foreground: oklch(0.18  0.010 45);
-    --muted:                oklch(0.95  0.005 56);
-    --muted-foreground:     oklch(0.50  0.012 50);
-    --accent:               oklch(0.60  0.230 38);
-    --accent-foreground:    oklch(0.99  0     0);
-    --destructive:          oklch(0.55  0.245 27.325);
-    --border:               oklch(0.87  0.008 52);
-    --input:                oklch(0.93  0.006 52);
-    --ring:                 oklch(0.60  0.230 38);
-    --chart-1:              oklch(0.60  0.230 38);
-    --chart-2:              oklch(0.65  0.175 58);
-    --chart-3:              oklch(0.52  0.200 25);
-    --chart-4:              oklch(0.58  0.165 145);
-    --chart-5:              oklch(0.48  0.175 265);
-    --radius: 0.625rem;
-    --sidebar:              oklch(0.985 0.004 56);
-    --sidebar-foreground:   oklch(0.12  0.010 45);
-    --sidebar-primary:      oklch(0.60  0.230 38);
-    --sidebar-primary-foreground: oklch(0.99 0 0);
-    --sidebar-accent:       oklch(0.93  0.006 52);
-    --sidebar-accent-foreground: oklch(0.18 0.010 45);
-    --sidebar-border:       oklch(0.87  0.008 52);
-    --sidebar-ring:         oklch(0.60  0.230 38);
+    --background:            #ffffff;
+    --foreground:            #222222;
+    --card:                  #f9f9f9;
+    --card-foreground:       #222222;
+    --popover:               #ffffff;
+    --popover-foreground:    #222222;
+    --primary:               #000000;
+    --primary-foreground:    #ffffff;
+    --secondary:             #f2f2f2;
+    --secondary-foreground:  #222222;
+    --muted:                 #f9f9f9;
+    --muted-foreground:      #999999;
+    --accent:                #000000;
+    --accent-foreground:     #ffffff;
+    --destructive:           #dc2626;
+    --destructive-foreground: #ffffff;
+    --border:                #eeeeee;
+    --input:                 #f9f9f9;
+    --ring:                  #000000;
+    --radius:                2px;
+    --sidebar:               #000000;
+    --sidebar-foreground:    #ffffff;
+    --sidebar-primary:       #ffffff;
+    --sidebar-primary-foreground: #000000;
+    --sidebar-accent:        rgba(255,255,255,0.08);
+    --sidebar-accent-foreground: #ffffff;
+    --sidebar-border:        rgba(255,255,255,0.10);
+    --sidebar-ring:          #ffffff;
 }
 
 /* ── Base ─────────────────────────────────────────────── */
@@ -90,39 +85,49 @@
   }
   body {
     @apply bg-background text-foreground;
+    font-family: 'Inter', sans-serif;
+    font-size: 15px;
   }
   html {
-    @apply font-sans;
+    font-family: 'Inter', sans-serif;
+  }
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+    letter-spacing: 0em;
   }
 
-  html { font-size: 18px; }
-
-  ::-webkit-scrollbar              { width: 5px; height: 5px; }
+  ::-webkit-scrollbar              { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track        { background: transparent; }
-  ::-webkit-scrollbar-thumb        { background: oklch(0.78 0.008 52); border-radius: 999px; }
-  ::-webkit-scrollbar-thumb:hover  { background: oklch(0.60 0.220 38 / 65%); }
+  ::-webkit-scrollbar-thumb        { background: #cccccc; border-radius: 0; }
+  ::-webkit-scrollbar-thumb:hover  { background: #999999; }
 }
 
-/* ── Glass utility ────────────────────────────────────── */
-.glass {
-  background: oklch(1 0 0 / 78%);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid oklch(0.87 0.008 52);
-  box-shadow:
-    0 4px 32px oklch(0 0 0 / 7%),
-    0 1px 3px oklch(0 0 0 / 4%);
+/* ── NIU utility classes ─────────────────────── */
+.font-heading { font-family: 'Montserrat', sans-serif; }
+.font-body    { font-family: 'Inter', sans-serif; }
+.font-mono    { font-family: 'JetBrains Mono', monospace; }
+
+.niu-label {
+  font-family: 'Montserrat', sans-serif;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #999999;
 }
 
-/* ── Orange glow button ───────────────────────────────── */
-.btn-orange {
-  background: linear-gradient(135deg,
-    oklch(0.60 0.230 38),
-    oklch(0.54 0.235 26));
-  box-shadow: 0 0 16px oklch(0.60 0.230 38 / 30%);
-  transition: box-shadow 0.2s, transform 0.15s;
+.btn-niu {
+  background: #000000;
+  color: #ffffff;
+  font-family: 'Montserrat', sans-serif;
+  font-weight: 600;
+  font-size: 0.8125rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  border: none;
+  border-radius: 2px;
+  transition: background 0.15s;
 }
-.btn-orange:hover {
-  box-shadow: 0 0 26px oklch(0.60 0.230 38 / 50%);
-  transform: translateY(-1px);
+.btn-niu:hover {
+  background: #333333;
 }

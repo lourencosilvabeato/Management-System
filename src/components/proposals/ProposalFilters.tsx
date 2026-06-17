@@ -52,7 +52,7 @@ export function ProposalFilters({ onSearchChange, estado, onEstadoChange, result
           </SelectContent>
         </Select>
       </div>
-      <p className="text-xs text-muted-foreground">{resultCount} propostas</p>
+      <p style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.625rem', fontWeight: 500, letterSpacing: '0.08em', color: '#999999' }}>{resultCount} propostas</p>
     </div>
   )
 }

@@ -16,20 +16,24 @@ interface Props {
   onSave: () => void
 }
 
-const ORANGE = 'oklch(0.60 0.230 38)'
-
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl overflow-hidden border border-border bg-card shadow-sm">
+    <div style={{ border: '1px solid #eeeeee', borderRadius: 2, overflow: 'hidden' }}>
       <div
-        className="px-5 py-3 flex items-center bg-muted/60 border-b border-border"
-        style={{ borderLeft: `3px solid ${ORANGE}` }}
+        style={{
+          padding: '10px 20px',
+          background: '#f9f9f9',
+          borderBottom: '1px solid #eeeeee',
+          borderLeft: '3px solid #000000',
+          display: 'flex',
+          alignItems: 'center',
+        }}
       >
-        <p className="text-xs font-bold uppercase tracking-widest" style={{ color: ORANGE }}>
+        <p style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.12em', textTransform: 'uppercase', color: '#000000', margin: 0 }}>
           {title}
         </p>
       </div>
-      <div className="p-5">{children}</div>
+      <div style={{ padding: 20 }}>{children}</div>
     </div>
   )
 }
@@ -45,8 +49,8 @@ function ReadField({ label, value }: { label: string; value?: string | null }) {
 
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
-    <div className="space-y-2">
-      <p className="text-sm font-semibold text-foreground/80">{label}</p>
+    <div className="space-y-1.5">
+      <p style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#666666', margin: 0 }}>{label}</p>
       {children}
     </div>
   )
@@ -325,7 +329,7 @@ export function TabDadosBase({ proposal, currentUser, accountUsers, onSave }: Pr
         <Button
           onClick={handleSave}
           disabled={saving}
-          className="btn-orange text-white border-0 px-6 h-11 text-base font-semibold"
+          className="btn-niu px-6 h-11"
         >
           {saving ? 'A guardar...' : 'Guardar alterações'}
         </Button>

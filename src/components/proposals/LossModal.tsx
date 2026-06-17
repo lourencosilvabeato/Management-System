@@ -50,7 +50,7 @@ export function LossModal({ open, onClose, onConfirm, loading }: Props) {
 
   return (
     <Dialog open={open} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent>
+      <DialogContent style={{ borderTop: '4px solid #000000', borderRadius: 2 }}>
         <DialogHeader>
           <DialogTitle>Marcar como Perdida</DialogTitle>
         </DialogHeader>

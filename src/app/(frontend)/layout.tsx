@@ -12,9 +12,9 @@ export default function RootLayout(props: { children: React.ReactNode }) {
 
   return (
     <html lang="pt">
-      <body>
+      <body style={{ fontFamily: "'Inter', sans-serif" }}>
         <QueryProvider>
-          <main>{children}</main>
+          {children}
         </QueryProvider>
       </body>
     </html>

@@ -230,7 +230,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
         {canCreate && (
           <Button
             onClick={() => setNewDialogOpen(true)}
-            className="btn-orange shrink-0 h-10 px-4 font-semibold text-sm text-white border-0"
+            className="btn-niu shrink-0 h-10 px-5"
           >
             + Nova Proposta
           </Button>
@@ -244,7 +244,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
         resultCount={filtered.length}
       />
 
-      <div className="glass rounded-xl overflow-hidden">
+      <div className="overflow-hidden" style={{ border: '1px solid #eeeeee', borderRadius: 2 }}>
         <Table>
           <TableHeader>
             <TableRow className="border-border/60">
@@ -261,7 +261,8 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
               ).map(({ col, label }) => (
                 <TableHead
                   key={col}
-                  className="cursor-pointer select-none whitespace-nowrap font-semibold text-foreground/70"
+                  className="cursor-pointer select-none whitespace-nowrap"
+                  style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999999', background: '#f9f9f9' }}
                   onClick={() => handleSort(col)}
                 >
                   {label}
@@ -299,7 +300,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
                   className="cursor-pointer transition-colors hover:bg-foreground/[0.04] border-border/50"
                   onClick={() => setSelectedId(String(p.id))}
                 >
-                  <TableCell className="font-mono text-xs text-muted-foreground">
+                  <TableCell className="text-xs text-[#999999]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
                     {p.numero ?? '—'}
                   </TableCell>
                   <TableCell className="font-semibold">{p.nomeProjeto}</TableCell>
@@ -327,7 +328,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
 
       {/* Proposal detail modal */}
       <Dialog open={!!selectedId} onOpenChange={(open) => !open && setSelectedId(null)}>
-        <DialogContent className="!max-w-[90vw] !w-[90vw] !h-[88vh] p-0 overflow-hidden flex flex-col glass">
+        <DialogContent className="!max-w-[90vw] !w-[90vw] !h-[88vh] p-0 overflow-hidden flex flex-col" style={{ background: '#ffffff', borderRadius: 2, borderLeft: '4px solid #000000' }}>
           {selectedId && (
             <ProposalDrawer
               id={selectedId}
@@ -402,7 +403,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
             <Button variant="outline" onClick={() => { setNewDialogOpen(false); setCreateError('') }} disabled={creating}>
               Cancelar
             </Button>
-            <Button onClick={handleCreate} disabled={creating}>
+            <Button onClick={handleCreate} disabled={creating} className="btn-niu">
               {creating ? 'A criar...' : 'Criar Proposta'}
             </Button>
           </DialogFooter>

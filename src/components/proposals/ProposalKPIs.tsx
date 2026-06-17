@@ -1,19 +1,9 @@
 'use client'
 
-import { Activity, TrendingUp, Trophy, Send } from 'lucide-react'
 import type { Proposal } from '@/payload-types'
 
 interface Props {
   proposals: Proposal[]
-}
-
-interface KPI {
-  label: string
-  value: string | number
-  icon: React.ReactNode
-  color: string
-  glow: string
-  border: string
 }
 
 export function ProposalKPIs({ proposals }: Props) {
@@ -33,41 +23,16 @@ export function ProposalKPIs({ proposals }: Props) {
 
   const enviada = proposals.filter((p) => p.estado === 'Enviada').length
 
-  const kpis: KPI[] = [
-    {
-      label: 'Propostas activas',
-      value: active.length,
-      icon: <Activity className="w-4 h-4" />,
-      color: 'oklch(0.56 0.230 38)',
-      glow: 'rgba(210, 80, 15, 0.15)',
-      border: 'rgba(200, 75, 15, 0.22)',
-    },
+  const kpis = [
+    { label: 'Propostas activas', value: active.length },
     {
       label: 'Pipeline total',
       value: pipeline > 0
         ? `${pipeline.toLocaleString('pt-PT', { minimumFractionDigits: 0 })}€`
         : '—',
-      icon: <TrendingUp className="w-4 h-4" />,
-      color: 'oklch(0.60 0.175 55)',
-      glow: 'rgba(200, 140, 10, 0.14)',
-      border: 'rgba(190, 130, 10, 0.20)',
     },
-    {
-      label: 'Ganhas este mês',
-      value: wonMonth,
-      icon: <Trophy className="w-4 h-4" />,
-      color: 'oklch(0.55 0.165 145)',
-      glow: 'rgba(30, 170, 100, 0.12)',
-      border: 'rgba(25, 160, 90, 0.18)',
-    },
-    {
-      label: 'Em Enviada',
-      value: enviada,
-      icon: <Send className="w-4 h-4" />,
-      color: 'oklch(0.56 0.230 38)',
-      glow: 'rgba(210, 80, 15, 0.12)',
-      border: 'rgba(200, 75, 15, 0.18)',
-    },
+    { label: 'Ganhas este mês', value: wonMonth },
+    { label: 'Em Enviada', value: enviada },
   ]
 
   return (
@@ -75,27 +40,39 @@ export function ProposalKPIs({ proposals }: Props) {
       {kpis.map((kpi) => (
         <div
           key={kpi.label}
-          className="glass rounded-xl px-4 py-3 flex flex-col gap-2 cursor-default select-none"
           style={{
-            border: `1px solid ${kpi.border}`,
-            transition: 'box-shadow 0.25s, transform 0.2s',
-          }}
-          onMouseEnter={(e) => {
-            const el = e.currentTarget as HTMLDivElement
-            el.style.boxShadow = `0 0 20px 2px ${kpi.glow}, 0 4px 16px rgba(0,0,0,0.10)`
-            el.style.transform = 'translateY(-2px)'
-          }}
-          onMouseLeave={(e) => {
-            const el = e.currentTarget as HTMLDivElement
-            el.style.boxShadow = ''
-            el.style.transform = ''
+            background: '#ffffff',
+            border: '1px solid #eeeeee',
+            borderRadius: 2,
+            padding: '14px 16px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
           }}
         >
-          <div className="flex items-center gap-1.5" style={{ color: kpi.color }}>
-            {kpi.icon}
-            <span className="text-xs font-medium text-muted-foreground">{kpi.label}</span>
-          </div>
-          <span className="text-2xl font-bold tracking-tight text-foreground">{kpi.value}</span>
+          <span
+            style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '0.5625rem',
+              fontWeight: 600,
+              letterSpacing: '0.1em',
+              textTransform: 'uppercase',
+              color: '#999999',
+            }}
+          >
+            {kpi.label}
+          </span>
+          <span
+            style={{
+              fontFamily: "'Montserrat', sans-serif",
+              fontSize: '1.5rem',
+              fontWeight: 700,
+              color: '#000000',
+              lineHeight: 1,
+            }}
+          >
+            {kpi.value}
+          </span>
         </div>
       ))}
     </div>

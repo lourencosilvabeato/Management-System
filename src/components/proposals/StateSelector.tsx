@@ -129,6 +129,7 @@ export function StateSelector({ proposal, currentUser, onSuccess }: Props) {
                 void doTransition(estado)
               }}
               disabled={loading}
+              className="btn-niu"
             >
               {loading ? 'A guardar...' : 'Confirmar'}
             </Button>

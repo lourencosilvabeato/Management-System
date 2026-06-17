@@ -103,11 +103,13 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
             {/* Number + badge */}
             <div className="flex items-center gap-2 flex-wrap">
               <span
-                className="text-xs font-mono px-2 py-0.5 rounded"
+                className="text-xs px-2 py-0.5"
                 style={{
-                  background: 'oklch(0.60 0.230 38 / 10%)',
-                  color: 'oklch(0.48 0.230 38)',
-                  border: '1px solid oklch(0.60 0.230 38 / 35%)',
+                  background: '#f2f2f2',
+                  color: '#666666',
+                  border: '1px solid #eeeeee',
+                  fontFamily: "'JetBrains Mono', monospace",
+                  borderRadius: 2,
                 }}
               >
                 {proposal.numero}
@@ -118,7 +120,7 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
             </div>
 
             {/* Title */}
-            <h2 className="text-xl font-bold leading-tight truncate pr-8 text-foreground">
+            <h2 className="text-xl font-bold leading-tight truncate pr-8 text-foreground" style={{ fontFamily: "'Montserrat', sans-serif" }}>
               {proposal.nomeProjeto}
             </h2>
 
@@ -152,8 +154,8 @@ export function ProposalDrawer({ id, currentUser, accountUsers, onRefreshList }:
               <TabsTrigger
                 key={tab.value}
                 value={tab.value}
-                className="rounded-none border-b-2 border-transparent pb-3 px-1 mr-4 text-sm font-medium text-muted-foreground transition-colors data-[state=active]:border-orange-500 data-[state=active]:text-foreground data-[state=active]:bg-transparent hover:text-foreground"
-                style={{ background: 'transparent' }}
+                className="rounded-none border-b-2 border-transparent pb-3 px-1 mr-4 text-muted-foreground transition-colors data-[state=active]:border-black data-[state=active]:text-foreground data-[state=active]:bg-transparent hover:text-foreground"
+                style={{ background: 'transparent', fontFamily: "'Montserrat', sans-serif", fontSize: '0.75rem', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}
               >
                 {tab.label}
               </TabsTrigger>

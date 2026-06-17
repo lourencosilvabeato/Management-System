@@ -126,7 +126,7 @@ export function EstimateChat({ conversaIA, proposalId, onNewEstimate }: Props) {
             {EXAMPLE_PROMPTS.map((prompt) => (
               <button
                 key={prompt}
-                className="rounded-full border px-3 py-1.5 text-xs hover:bg-muted transition-colors disabled:opacity-50"
+                className="border px-3 py-1.5 text-xs hover:bg-[#f2f2f2] transition-colors disabled:opacity-50" style={{ borderRadius: 2, fontFamily: "'Montserrat', sans-serif", fontWeight: 500 }}
                 onClick={() => void send(prompt)}
                 disabled={loading}
               >
@@ -166,7 +166,7 @@ export function EstimateChat({ conversaIA, proposalId, onNewEstimate }: Props) {
         <Button
           onClick={() => void send()}
           disabled={loading || !input.trim()}
-          className="self-end"
+          className="self-end btn-niu"
         >
           {loading ? '...' : 'Enviar'}
         </Button>
@@ -180,7 +180,7 @@ function MessageBubble({ msg }: { msg: ConversaMsg }) {
   if (msg.role === 'user') {
     return (
       <div className="flex flex-col gap-0.5 items-end">
-        <div className="max-w-[85%] rounded-lg px-3 py-2 text-sm bg-primary text-primary-foreground">
+        <div className="max-w-[85%] px-3 py-2 text-sm text-white" style={{ background: '#000000', borderRadius: 2 }}>
           {msg.content}
         </div>
         <span className="text-xs text-muted-foreground px-1">
@@ -212,7 +212,7 @@ function MessageBubble({ msg }: { msg: ConversaMsg }) {
 
   return (
     <div className="flex flex-col gap-0.5 items-start">
-      <div className="max-w-[85%] rounded-lg px-3 py-2 text-sm bg-muted space-y-1.5">
+      <div className="max-w-[85%] px-3 py-2 text-sm space-y-1.5" style={{ background: '#f2f2f2', color: '#222222', borderRadius: 2 }}>
         {isJson ? (
           <>
             <p className="italic text-muted-foreground text-xs">
