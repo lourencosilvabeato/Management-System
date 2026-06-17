@@ -1,10 +1,9 @@
-import { analyzeImagesMock } from './openaiClient'
+import { analyzeImagesVision } from './openaiClient'
 
 export async function analyzeImages(imageUrls: string[]): Promise<string> {
   if (imageUrls.length === 0) return ''
 
   try {
-    // Download images and convert to base64 (logic ready for real GPT-4o Vision)
     const base64Images: string[] = []
     for (const url of imageUrls) {
       try {
@@ -26,11 +25,9 @@ export async function analyzeImages(imageUrls: string[]): Promise<string> {
       return ''
     }
 
-    // TODO: when OPENAI_API_KEY is available, replace with real GPT-4o Vision call
-    // passing base64Images to the OpenAI SDK
-    return await analyzeImagesMock(imageUrls)
+    return await analyzeImagesVision(base64Images)
   } catch (err) {
-    console.error('[analyzeImages] GPT-4o Vision failed completely:', err)
+    console.error('[analyzeImages] GPT-4o Vision failed:', err)
     return ''
   }
 }

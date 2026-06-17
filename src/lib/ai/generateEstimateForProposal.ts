@@ -2,7 +2,7 @@ import type { BasePayload } from 'payload'
 import type { Proposal, Material, Machine, InternalRate, ProjectLibrary } from '../../payload-types'
 import { analyzeImages } from './analyzeImages'
 import { buildInitialPrompt } from './buildPrompt'
-import { generateEstimateMock } from './claudeClient'
+import { generateEstimate } from './claudeClient'
 import { parseEstimate } from './parseEstimate'
 
 export interface EstimateResult {
@@ -56,8 +56,7 @@ function normalizeConfianca(nivel: string): 'Alto' | 'Medio' | 'Baixo' {
 async function callAI(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
 ): Promise<string> {
-  const lastUserMessage = [...messages].reverse().find((m) => m.role === 'user')?.content ?? ''
-  return generateEstimateMock(lastUserMessage)
+  return generateEstimate(messages)
 }
 
 async function callAIWithRetry(

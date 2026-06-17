@@ -1,18 +1,29 @@
-// TODO: replace with real OpenAI SDK when OPENAI_API_KEY is available
-// import OpenAI from 'openai'
-// export const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
+import OpenAI from 'openai'
 
-export async function analyzeImagesMock(_imageUrls: string[]): Promise<string> {
-  // Simulate API latency
-  await new Promise((resolve) => setTimeout(resolve, 500))
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 
-  return (
-    'Stand de exposição com estrutura modular em alumínio. ' +
-    'Dimensões aparentes: 3m de largura × 2m de altura × 1m de profundidade. ' +
-    'Painel traseiro com impressão gráfica de grande formato em lona. ' +
-    'Balcão frontal com tampo branco, aproximadamente 120cm de comprimento × 90cm de altura. ' +
-    'Iluminação de topo com régua de LEDs brancos. ' +
-    'Elementos visíveis: 2 colunas verticais, travessa superior, base estabilizadora. ' +
-    'Acabamentos: perfis em prateado, revestimento branco liso nos painéis laterais.'
-  )
+export async function analyzeImagesVision(base64Images: string[]): Promise<string> {
+  const response = await openai.chat.completions.create({
+    model: 'gpt-4o',
+    max_tokens: 1024,
+    messages: [
+      {
+        role: 'user',
+        content: [
+          {
+            type: 'text',
+            text: 'Analisa estas imagens de maquetes/mockups de stands ou instalações de eventos. Descreve em português: dimensões aparentes, materiais visíveis, elementos estruturais, acabamentos, iluminação, e qualquer detalhe relevante para orçamentação de produção física.',
+          },
+          ...base64Images.map((b64) => ({
+            type: 'image_url' as const,
+            image_url: {
+              url: `data:image/jpeg;base64,${b64}`,
+              detail: 'high' as const,
+            },
+          })),
+        ],
+      },
+    ],
+  })
+  return response.choices[0]?.message?.content ?? ''
 }
