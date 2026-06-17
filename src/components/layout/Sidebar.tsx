@@ -1,6 +1,8 @@
 'use client'
 
+import Image from 'next/image'
 import Link from 'next/link'
+import logoSrc from '@/assets/logo.jpg'
 
 interface Props {
   currentUser: {
@@ -40,32 +42,28 @@ export function Sidebar({ currentUser }: Props) {
       {/* Logo */}
       <div
         style={{
-          padding: '32px 24px 24px',
+          padding: '24px 24px 20px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
+          display: 'flex',
+          alignItems: 'center',
+          gap: 12,
         }}
       >
+        <Image
+          src={logoSrc}
+          alt="NIU"
+          width={48}
+          height={48}
+          style={{ borderRadius: 4, flexShrink: 0 }}
+        />
         <span
           style={{
             fontFamily: "'Montserrat', sans-serif",
-            fontSize: '1.5rem',
-            fontWeight: 700,
-            letterSpacing: '0.2em',
-            color: '#ffffff',
-            display: 'block',
-          }}
-        >
-          NIU
-        </span>
-        <span
-          style={{
-            fontFamily: "'Montserrat', sans-serif",
-            fontSize: '0.625rem',
+            fontSize: '0.6875rem',
             fontWeight: 500,
             letterSpacing: '0.15em',
             textTransform: 'uppercase',
-            color: 'rgba(255,255,255,0.40)',
-            display: 'block',
-            marginTop: 4,
+            color: 'rgba(255,255,255,0.45)',
           }}
         >
           Gestão
@@ -77,7 +75,7 @@ export function Sidebar({ currentUser }: Props) {
         <span
           style={{
             fontFamily: "'Montserrat', sans-serif",
-            fontSize: '0.5625rem',
+            fontSize: '0.625rem',
             fontWeight: 600,
             letterSpacing: '0.12em',
             textTransform: 'uppercase',
@@ -95,9 +93,9 @@ export function Sidebar({ currentUser }: Props) {
           style={{
             display: 'flex',
             alignItems: 'center',
-            padding: '10px 24px',
+            padding: '11px 24px',
             fontFamily: "'Montserrat', sans-serif",
-            fontSize: '0.8125rem',
+            fontSize: '0.875rem',
             fontWeight: 600,
             letterSpacing: '0.06em',
             textTransform: 'uppercase',
@@ -121,7 +119,7 @@ export function Sidebar({ currentUser }: Props) {
         <p
           style={{
             fontFamily: "'Montserrat', sans-serif",
-            fontSize: '0.75rem',
+            fontSize: '0.8125rem',
             fontWeight: 600,
             color: '#ffffff',
             margin: 0,
@@ -135,9 +133,9 @@ export function Sidebar({ currentUser }: Props) {
         <p
           style={{
             fontFamily: "'Inter', sans-serif",
-            fontSize: '0.6875rem',
+            fontSize: '0.75rem',
             color: 'rgba(255,255,255,0.40)',
-            margin: '2px 0 0',
+            margin: '3px 0 0',
           }}
         >
           {ROLE_LABELS[currentUser.role] ?? currentUser.role}
