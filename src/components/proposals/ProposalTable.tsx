@@ -262,7 +262,7 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
                 <TableHead
                   key={col}
                   className="cursor-pointer select-none whitespace-nowrap"
-                  style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '10px', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999999', background: '#f9f9f9' }}
+                  style={{ fontFamily: "'Montserrat', sans-serif", fontSize: '0.625rem', fontWeight: 600, letterSpacing: '0.1em', textTransform: 'uppercase', color: '#999999', background: '#f9f9f9' }}
                   onClick={() => handleSort(col)}
                 >
                   {label}

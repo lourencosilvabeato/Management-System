@@ -42,18 +42,18 @@ export function Sidebar({ currentUser }: Props) {
       {/* Logo */}
       <div
         style={{
-          padding: '24px 24px 20px',
+          padding: '20px 20px 16px',
           borderBottom: '1px solid rgba(255,255,255,0.08)',
           display: 'flex',
           alignItems: 'center',
-          gap: 12,
+          gap: 14,
         }}
       >
         <Image
           src={logoSrc}
           alt="NIU"
-          width={48}
-          height={48}
+          width={80}
+          height={80}
           style={{ borderRadius: 4, flexShrink: 0 }}
         />
         <span
