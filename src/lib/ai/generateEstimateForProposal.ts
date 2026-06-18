@@ -4,6 +4,8 @@ import { analyzeImages } from './analyzeImages'
 import { buildInitialPrompt } from './buildPrompt'
 import { generateEstimate } from './claudeClient'
 import { parseEstimate } from './parseEstimate'
+import { describeAttachments } from './readAttachments'
+import { analyzeFigmaLink } from '../figma'
 
 export interface EstimateResult {
   conversaIA: Array<{ role: 'user' | 'assistant'; content: string; timestamp: string }>
@@ -89,12 +91,18 @@ export async function generateInitialEstimate(
   const knowledgeBase = await fetchKnowledgeBase(payload)
 
   const mockupUrls = getMockupUrls(proposal)
-  let imageDescription = ''
-  if (mockupUrls.length > 0) {
-    imageDescription = await analyzeImages(mockupUrls)
-  }
+  const [imageDescription, attachmentContent, figmaAnalysis] = await Promise.all([
+    mockupUrls.length > 0 ? analyzeImages(mockupUrls) : Promise.resolve(''),
+    describeAttachments(proposal.ficheirosAnexos),
+    proposal.figmaLink ? analyzeFigmaLink(proposal.figmaLink) : Promise.resolve({ imageDescription: '', textAnnotations: '' }),
+  ])
 
-  const userMessage = buildInitialPrompt(proposal, knowledgeBase, imageDescription)
+  const userMessage = buildInitialPrompt(proposal, knowledgeBase, imageDescription, {
+    attachmentText: attachmentContent.textContent,
+    attachmentImageDescription: attachmentContent.imageDescription,
+    figmaImageDescription: figmaAnalysis.imageDescription,
+    figmaTextAnnotations: figmaAnalysis.textAnnotations,
+  })
   const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
     { role: 'user', content: userMessage },
   ]
@@ -131,11 +139,17 @@ export async function continueConversation(
   // Rebuild initial prompt so the AI has full context on follow-up calls
   const knowledgeBase = await fetchKnowledgeBase(payload)
   const mockupUrls = getMockupUrls(proposal)
-  let imageDescription = ''
-  if (mockupUrls.length > 0) {
-    imageDescription = await analyzeImages(mockupUrls)
-  }
-  const initialPrompt = buildInitialPrompt(proposal, knowledgeBase, imageDescription)
+  const [imageDescription, attachmentContent, figmaAnalysis] = await Promise.all([
+    mockupUrls.length > 0 ? analyzeImages(mockupUrls) : Promise.resolve(''),
+    describeAttachments(proposal.ficheirosAnexos),
+    proposal.figmaLink ? analyzeFigmaLink(proposal.figmaLink) : Promise.resolve({ imageDescription: '', textAnnotations: '' }),
+  ])
+  const initialPrompt = buildInitialPrompt(proposal, knowledgeBase, imageDescription, {
+    attachmentText: attachmentContent.textContent,
+    attachmentImageDescription: attachmentContent.imageDescription,
+    figmaImageDescription: figmaAnalysis.imageDescription,
+    figmaTextAnnotations: figmaAnalysis.textAnnotations,
+  })
 
   // Reconstruct the initial AI response from stored session data
   const initialAssistantContent = JSON.stringify({

@@ -56,36 +56,68 @@ function lexicalToText(richText: unknown): string {
   return extractText(root).trim()
 }
 
+export interface PromptExtras {
+  imageDescription?: string
+  attachmentText?: string
+  attachmentImageDescription?: string
+  figmaImageDescription?: string
+  figmaTextAnnotations?: string
+}
+
 export function buildInitialPrompt(
   proposal: Proposal,
   knowledgeBase: KnowledgeBase,
   imageDescription: string,
+  extras: PromptExtras = {},
 ): string {
   const briefing = lexicalToText(proposal.briefing) || '(no briefing provided)'
   const memoria = lexicalToText(proposal.memoriacriativa) || 'No creative memory provided.'
-  const figmaLink = proposal.figmaLink ? `Visual reference link: ${proposal.figmaLink}` : ''
+
   const imageSection = imageDescription
     ? `## Mockup Analysis (GPT-4o Vision)\n${imageDescription}`
     : '## Mockups\nNo mockups available.'
 
-  return `## Project Briefing
-${briefing}
+  const attachmentSection =
+    extras.attachmentText || extras.attachmentImageDescription
+      ? [
+          '## Attached Files',
+          extras.attachmentText ? extras.attachmentText : '',
+          extras.attachmentImageDescription
+            ? `### Attachment Images (GPT-4o Vision)\n${extras.attachmentImageDescription}`
+            : '',
+        ]
+          .filter(Boolean)
+          .join('\n\n')
+      : ''
 
-## Creative Memory
-${memoria}
+  const figmaSection =
+    extras.figmaImageDescription || extras.figmaTextAnnotations
+      ? [
+          '## Figma Design Analysis',
+          extras.figmaTextAnnotations
+            ? `### Text Annotations\n${extras.figmaTextAnnotations}`
+            : '',
+          extras.figmaImageDescription
+            ? `### Visual Analysis (GPT-4o Vision)\n${extras.figmaImageDescription}`
+            : '',
+        ]
+          .filter(Boolean)
+          .join('\n\n')
+      : proposal.figmaLink
+        ? `## Figma Link\n${proposal.figmaLink} (visual analysis not available — add FIGMA_API_TOKEN to enable)`
+        : ''
 
-${figmaLink ? `## Figma Link\n${figmaLink}\n` : ''}
-${imageSection}
+  const sections = [
+    `## Project Briefing\n${briefing}`,
+    `## Creative Memory\n${memoria}`,
+    imageSection,
+    attachmentSection,
+    figmaSection,
+    `## Available Materials\n${serializeMaterials(knowledgeBase.materials)}`,
+    `## Available Machines\n${serializeMachines(knowledgeBase.machines)}`,
+    `## Internal Rates\n${serializeRates(knowledgeBase.internalRates)}`,
+    `## Historical Projects (Benchmarking)\n${serializeProjectLibrary(knowledgeBase.projectLibrary)}`,
+  ]
 
-## Available Materials
-${serializeMaterials(knowledgeBase.materials)}
-
-## Available Machines
-${serializeMachines(knowledgeBase.machines)}
-
-## Internal Rates
-${serializeRates(knowledgeBase.internalRates)}
-
-## Historical Projects (Benchmarking)
-${serializeProjectLibrary(knowledgeBase.projectLibrary)}`
+  return sections.filter(Boolean).join('\n\n')
 }
