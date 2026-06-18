@@ -20,6 +20,16 @@ interface Props {
   resultCount: number
 }
 
+const ESTADO_LABELS: Record<EstadoFilter, string> = {
+  all: 'Todos os estados',
+  Recebida: 'Recebida',
+  EmElaboracao: 'Em Elaboração',
+  EmOrcamentacao: 'Em Orçamentação',
+  Enviada: 'Enviada',
+  Ganha: 'Ganha',
+  Perdida: 'Perdida',
+}
+
 export function ProposalFilters({ onSearchChange, estado, onEstadoChange, resultCount }: Props) {
   const [inputValue, setInputValue] = useState('')
 
@@ -39,7 +49,7 @@ export function ProposalFilters({ onSearchChange, estado, onEstadoChange, result
         />
         <Select value={estado} onValueChange={(v) => onEstadoChange(v as EstadoFilter)}>
           <SelectTrigger className="sm:w-48">
-            <SelectValue placeholder="Estado" />
+            <span className="text-sm">{ESTADO_LABELS[estado]}</span>
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Todos os estados</SelectItem>
