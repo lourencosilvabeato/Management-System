@@ -118,7 +118,20 @@ export function buildInitialPrompt(
     .filter(Boolean)
     .join('\n')
 
-  const preamble = `INSTRUÇÃO: Lê atentamente TODAS as secções abaixo antes de gerar a estimativa. As fontes disponíveis para este projecto são:\n${sourcesList}\n\nExtrai TODOS os elementos físicos mencionados em qualquer das fontes e garante que cada um tem uma rubrica no orçamento. Não omitas nenhum elemento.`
+  const preamble = `INSTRUÇÃO: Lê atentamente TODAS as secções abaixo antes de gerar a estimativa. As fontes disponíveis para este projecto são:\n${sourcesList}\n\nExtrai TODOS os elementos físicos mencionados em qualquer das fontes e garante que cada um tem uma rubrica no orçamento. Não omitas nenhum elemento.
+
+PASSO OBRIGATÓRIO — antes de gerar o JSON, faz esta verificação interna e garante que cada ponto relevante tem rubrica:
+□ Equipamentos electrónicos (ecrãs, TVs, monitores, projectores) — rubrica própria com preço de mercado, não absorvidos no suporte
+□ Iluminação completa (fitas LED, spots, projectores de luz, cablagem de iluminação)
+□ Cablagem eléctrica, tomadas e quadro de distribuição
+□ Impressão gráfica + operador de impressão (técnico)
+□ Fabrico de peças estruturais (CNC, corte, serralharia) + operador de máquina
+□ Pré-montagem e acabamentos de bancada (lacagem, pintura, aplicação de vinilo)
+□ Transporte para o local do evento (viatura de carga + motorista)
+□ Montagem no local — todos os perfis necessários (montador, técnico AV, electricista, técnico de iluminação)
+□ Desmontagem no final do evento
+□ Equipamento externo alugado (plataforma elevatória, andaimes, geradores, etc.)
+Se algum destes pontos é relevante para este projecto e ainda não está no orçamento, inclui-o antes de devolver o JSON.`
 
   const sections = [
     preamble,
