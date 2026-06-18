@@ -6,6 +6,8 @@ export async function analyzeImagesVision(base64Images: string[]): Promise<strin
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     max_tokens: 1024,
+    temperature: 0,
+    seed: 42,
     messages: [
       {
         role: 'user',
