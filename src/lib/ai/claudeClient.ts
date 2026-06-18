@@ -9,6 +9,8 @@ export async function generateEstimate(
   const response = await openai.chat.completions.create({
     model: 'gpt-4o',
     max_tokens: 4096,
+    temperature: 0,
+    seed: 42,
     messages: [
       { role: 'system', content: ESTIMATE_SYSTEM_PROMPT },
       ...messages,
