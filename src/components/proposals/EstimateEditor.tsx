@@ -73,6 +73,7 @@ export function EstimateEditor({
   const [items, setItems] = useState<EstimateItem[]>(initialItems)
   const [saving, setSaving] = useState(false)
   const [savingVenda, setSavingVenda] = useState(false)
+  const [vendaMsg, setVendaMsg] = useState<'ok' | 'error' | null>(null)
   const [confirmRemove, setConfirmRemove] = useState<{ itemIdx: number; rubIdx: number } | null>(null)
   const [confirmRegenerate, setConfirmRegenerate] = useState(false)
   const [marginInput, setMarginInput] = useState('')
@@ -201,15 +202,22 @@ export function EstimateEditor({
     const num = parseFloat(value)
     if (isNaN(num) || num <= 0) return
     setSavingVenda(true)
+    setVendaMsg(null)
     try {
-      await fetch(`/api/proposals/${proposalId}`, {
+      const res = await fetch(`/api/proposals/${proposalId}`, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ valorVendaFinal: num }),
       })
+      if (!res.ok) {
+        setVendaMsg('error')
+        return
+      }
+      setVendaMsg('ok')
+      setTimeout(() => setVendaMsg(null), 2500)
       onAccepted()
     } catch {
-      /* silent */
+      setVendaMsg('error')
     } finally {
       setSavingVenda(false)
     }
@@ -462,8 +470,14 @@ export function EstimateEditor({
               disabled={savingVenda || !vendaInput}
               onClick={() => void handleApplyVenda(vendaInput)}
             >
-              {savingVenda ? '...' : 'Aplicar'}
+              {savingVenda ? 'A guardar...' : 'Aplicar'}
             </Button>
+            {vendaMsg === 'ok' && (
+              <span className="text-xs text-emerald-600 font-medium">Guardado</span>
+            )}
+            {vendaMsg === 'error' && (
+              <span className="text-xs text-destructive font-medium">Erro ao guardar</span>
+            )}
           </div>
         )}
         {readOnly && typeof valorVendaFinal === 'number' && (
