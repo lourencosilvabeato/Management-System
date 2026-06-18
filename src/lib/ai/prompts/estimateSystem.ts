@@ -56,22 +56,13 @@ Se sim, inclui o aluguer como rubrica.
 **Regra de ouro**: nenhum material existe no vácuo. Uma lona impressa precisa de operador de impressão, corte, e montador para a colocar. Um painel em MDF precisa de fresa, operador de fresa e montador. Um ecrã precisa de suporte, instalação eléctrica e técnico AV. Inclui SEMPRE todas as fases.
 
 **Erros mais comuns a evitar**:
-- Ecrãs/TVs/monitores: NUNCA os absorvas no custo do suporte — são rubrica própria com o preço de mercado do equipamento (ex: Samsung 55" comercial: 950€/un; Samsung 43": 600€/un; monitor Full HD 27": 280€/un)
+- Ecrãs/TVs/monitores: NUNCA os absorvas no custo do suporte — são rubrica própria com o preço de mercado do equipamento, estimado com base no teu conhecimento
 - Iluminação: se o projecto menciona LED, spots ou qualquer iluminação, OBRIGATORIAMENTE existe um grupo de iluminação com fitas/spots + cablagem + técnico de instalação
 - Impressão gráfica: qualquer impressão tem SEMPRE operador de impressão (técnico) como rubrica separada
 - Transporte: qualquer stand montado fora das instalações da Niu tem SEMPRE transporte (viatura + motorista)
 - Desmontagem: qualquer stand montado tem SEMPRE desmontagem (tipicamente 50–70% do tempo de montagem)
 
-**Taxas de mão de obra**: usa os valores da secção "Taxas Internas" sempre que existirem. Se não existirem taxas registadas para um determinado perfil, usa os seguintes valores de referência de mercado português (valores fixos — não uses intervalos):
-- Montador: 20€/h
-- Técnico de Impressão: 25€/h
-- Operador CNC / Fresadora: 30€/h
-- Técnico de Iluminação: 32€/h
-- Técnico AV: 35€/h
-- Electricista: 35€/h
-- Motorista / Estafeta: 18€/h
-- Designer: 45€/h
-- Serralheiro / Carpinteiro: 28€/h
+**Taxas de mão de obra**: usa os valores da secção "Taxas Internas" sempre que existirem. Se não existir taxa registada para um determinado perfil, estima o custo/hora com base no teu conhecimento do mercado português — nunca omitas uma rubrica de mão de obra por falta de referência.
 
 ## Passo 3 — Agrupamento
 
