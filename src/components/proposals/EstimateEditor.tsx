@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { ChevronDownIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -81,6 +81,8 @@ export function EstimateEditor({
   )
   const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set(initialItems.map((_, i) => i)))
   const [approachExpanded, setApproachExpanded] = useState(false)
+  const [showApproachToggle, setShowApproachToggle] = useState(false)
+  const approachRef = useRef<HTMLParagraphElement>(null)
 
   const totalGeral = calcGeral(items)
 
@@ -93,6 +95,20 @@ export function EstimateEditor({
       setVendaInput(String(valorVendaFinal))
     }
   }, [valorVendaFinal])
+
+  // Sync items immediately when the AI returns a new estimate via chat
+  useEffect(() => {
+    setItems(initialItems)
+    setCollapsed(new Set(initialItems.map((_, i) => i)))
+  }, [initialItems])
+
+  // Show "Ver mais" only when text is actually clamped in the DOM
+  useEffect(() => {
+    if (approachExpanded) return
+    const el = approachRef.current
+    if (!el) return
+    setShowApproachToggle(el.scrollHeight > el.clientHeight)
+  }, [abordagemTecnica, approachExpanded])
 
   const toggleCollapse = (idx: number) => {
     setCollapsed((prev) => {
@@ -204,8 +220,6 @@ export function EstimateEditor({
       ? (((parseFloat(vendaInput) - totalGeral) / parseFloat(vendaInput)) * 100).toFixed(1)
       : null
 
-  const showApproachToggle = (abordagemTecnica?.length ?? 0) > 180
-
   return (
     <div className="space-y-4">
       {/* Header card: confidence + approach + actions */}
@@ -240,7 +254,7 @@ export function EstimateEditor({
             <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
               Abordagem Técnica
             </p>
-            <p className={`text-sm ${!approachExpanded && showApproachToggle ? 'line-clamp-3' : ''}`}>
+            <p ref={approachRef} className={`text-sm ${!approachExpanded ? 'line-clamp-3' : ''}`}>
               {abordagemTecnica}
             </p>
             {showApproachToggle && (
