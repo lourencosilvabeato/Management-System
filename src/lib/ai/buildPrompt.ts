@@ -107,16 +107,30 @@ export function buildInitialPrompt(
         ? `## Figma Link\n${proposal.figmaLink} (visual analysis not available — add FIGMA_API_TOKEN to enable)`
         : ''
 
+  const sourcesList = [
+    '- Briefing do projecto',
+    '- Memória criativa',
+    imageDescription ? '- Análise de maquetes (GPT-4o Vision)' : null,
+    extras.attachmentText || extras.attachmentImageDescription ? '- Ficheiros anexados (PDFs e imagens)' : null,
+    extras.figmaImageDescription || extras.figmaTextAnnotations ? '- Análise do ficheiro Figma' : null,
+    '- Base de conhecimento (materiais, máquinas, taxas, projectos históricos)',
+  ]
+    .filter(Boolean)
+    .join('\n')
+
+  const preamble = `INSTRUÇÃO: Lê atentamente TODAS as secções abaixo antes de gerar a estimativa. As fontes disponíveis para este projecto são:\n${sourcesList}\n\nExtrai TODOS os elementos físicos mencionados em qualquer das fontes e garante que cada um tem uma rubrica no orçamento. Não omitas nenhum elemento.`
+
   const sections = [
-    `## Project Briefing\n${briefing}`,
-    `## Creative Memory\n${memoria}`,
+    preamble,
+    `## Briefing do Projecto\n${briefing}`,
+    `## Memória Criativa\n${memoria}`,
     imageSection,
     attachmentSection,
     figmaSection,
-    `## Available Materials\n${serializeMaterials(knowledgeBase.materials)}`,
-    `## Available Machines\n${serializeMachines(knowledgeBase.machines)}`,
-    `## Internal Rates\n${serializeRates(knowledgeBase.internalRates)}`,
-    `## Historical Projects (Benchmarking)\n${serializeProjectLibrary(knowledgeBase.projectLibrary)}`,
+    `## Materiais Disponíveis\n${serializeMaterials(knowledgeBase.materials)}`,
+    `## Máquinas Disponíveis\n${serializeMachines(knowledgeBase.machines)}`,
+    `## Taxas Internas\n${serializeRates(knowledgeBase.internalRates)}`,
+    `## Projectos Históricos (Benchmarking)\n${serializeProjectLibrary(knowledgeBase.projectLibrary)}`,
   ]
 
   return sections.filter(Boolean).join('\n\n')

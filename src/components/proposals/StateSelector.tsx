@@ -58,6 +58,7 @@ export function StateSelector({ proposal, currentUser, onSuccess }: Props) {
   const [loading, setLoading] = useState(false)
   const [lossModalOpen, setLossModalOpen] = useState(false)
   const [confirmDialog, setConfirmDialog] = useState<{ estado: Estado; msg: string } | null>(null)
+  const [errorDialog, setErrorDialog] = useState<{ title: string; message: string } | null>(null)
 
   const nextStates = (ALL_TRANSITIONS[proposal.estado as Estado] ?? []).filter((t) =>
     t.allowedRoles.includes(currentUser.role),
@@ -74,12 +75,12 @@ export function StateSelector({ proposal, currentUser, onSuccess }: Props) {
       })
       if (!res.ok) {
         const data = (await res.json()) as { error?: string }
-        alert(data.error ?? 'Erro ao alterar estado')
+        setErrorDialog({ title: 'Não foi possível avançar', message: data.error ?? 'Erro ao alterar estado.' })
         return
       }
       onSuccess()
     } catch {
-      alert('Erro de rede')
+      setErrorDialog({ title: 'Erro de rede', message: 'Não foi possível contactar o servidor. Tenta novamente.' })
     } finally {
       setLoading(false)
     }
@@ -88,7 +89,20 @@ export function StateSelector({ proposal, currentUser, onSuccess }: Props) {
   const handleClick = (ns: (typeof nextStates)[0]) => {
     if (ns.estado === 'Perdida') {
       setLossModalOpen(true)
-    } else if (ns.confirmMsg) {
+      return
+    }
+
+    // Pre-check: EmOrcamentacao requires estadoCriativo = Aprovado
+    if (ns.estado === 'EmOrcamentacao' && proposal.estadoCriativo !== 'Aprovado') {
+      setErrorDialog({
+        title: 'Estado criativo não aprovado',
+        message:
+          'Para avançar para Orçamentação, o estado criativo da proposta tem de estar definido como "Aprovado".\n\nVai ao separador Criativa, revê o trabalho criativo e altera o estado para Aprovado antes de continuar.',
+      })
+      return
+    }
+
+    if (ns.confirmMsg) {
       setConfirmDialog({ estado: ns.estado, msg: ns.confirmMsg })
     } else {
       void doTransition(ns.estado)
@@ -132,6 +146,21 @@ export function StateSelector({ proposal, currentUser, onSuccess }: Props) {
               className="btn-niu"
             >
               {loading ? 'A guardar...' : 'Confirmar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Error dialog */}
+      <Dialog open={!!errorDialog} onOpenChange={(open) => !open && setErrorDialog(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{errorDialog?.title}</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm whitespace-pre-line">{errorDialog?.message}</p>
+          <DialogFooter>
+            <Button className="btn-niu" onClick={() => setErrorDialog(null)}>
+              OK
             </Button>
           </DialogFooter>
         </DialogContent>
