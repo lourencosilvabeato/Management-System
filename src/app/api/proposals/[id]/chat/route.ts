@@ -41,6 +41,7 @@ export async function POST(
   const proposal = await payload.findByID({
     collection: 'proposals',
     id,
+    depth: 2,
     overrideAccess: true,
   })
 

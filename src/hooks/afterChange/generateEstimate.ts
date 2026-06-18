@@ -25,7 +25,15 @@ export const generateEstimate: CollectionAfterChangeHook<Proposal> = async ({
         '../../lib/ai/generateEstimateForProposal'
       )
 
-      const result = await generateInitialEstimate(doc, req.payload)
+      // Re-fetch with depth so maquetes and ficheirosAnexos have populated Media objects with URLs
+      const fullProposal = await req.payload.findByID({
+        collection: 'proposals',
+        id: doc.id,
+        depth: 2,
+        overrideAccess: true,
+      })
+
+      const result = await generateInitialEstimate(fullProposal, req.payload)
 
       const existingSessoes = Array.isArray(doc.sessaoOrcamentacao)
         ? doc.sessaoOrcamentacao

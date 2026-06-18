@@ -100,5 +100,21 @@ export const validateTransition: CollectionBeforeChangeHook = async ({
     }
   }
 
+  // 5. EmOrcamentacao requires estadoCriativo = Aprovado
+  if (newEstado === 'EmOrcamentacao') {
+    const estadoCriativo = data.estadoCriativo ?? originalDoc?.estadoCriativo
+    if (estadoCriativo !== 'Aprovado') {
+      throw new ValidationError({
+        errors: [
+          {
+            message:
+              'O estado criativo tem de ser "Aprovado" antes de avançar para Orçamentação.',
+            path: 'estadoCriativo',
+          },
+        ],
+      })
+    }
+  }
+
   return data
 }
