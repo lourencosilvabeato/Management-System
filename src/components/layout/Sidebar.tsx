@@ -1,8 +1,6 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-import logoSrc from '@/assets/logo.jpg'
 
 interface Props {
   currentUser: {
@@ -49,13 +47,20 @@ export function Sidebar({ currentUser }: Props) {
           gap: 14,
         }}
       >
-        <Image
-          src={logoSrc}
-          alt="Logo"
-          width={80}
-          height={80}
-          style={{ borderRadius: 4, flexShrink: 0 }}
-        />
+        {/* Abstract mark — replaces company logo */}
+        <svg
+          width={40}
+          height={40}
+          viewBox="0 0 40 40"
+          fill="none"
+          xmlns="http://www.w3.org/2000/svg"
+          style={{ flexShrink: 0 }}
+        >
+          <rect width="40" height="40" rx="3" fill="rgba(255,255,255,0.08)" />
+          <rect x="10" y="10" width="8" height="20" rx="1" fill="white" />
+          <rect x="22" y="10" width="8" height="9" rx="1" fill="white" />
+          <rect x="22" y="22" width="8" height="8" rx="1" fill="rgba(255,255,255,0.45)" />
+        </svg>
         <span
           style={{
             fontFamily: "'Montserrat', sans-serif",

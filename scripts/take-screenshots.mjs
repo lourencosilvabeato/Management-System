@@ -9,21 +9,17 @@ const PASS = 'test1234'
 mkdirSync(OUT, { recursive: true })
 
 const browser = await chromium.launch({ headless: true })
-const ctx = await browser.newContext({ viewport: { width: 1440, height: 900 } })
+const ctx = await browser.newContext({ viewport: { width: 1600, height: 900 } })
 const page = await ctx.newPage()
 
 // ── login ────────────────────────────────────────────────────────────────────
 async function login() {
   await page.goto(`${BASE}/propostas`)
-  // if redirected to login
   if (page.url().includes('/login') || page.url().includes('/admin')) {
-    // try payload admin login
     await page.goto(`${BASE}/admin/login`)
     await page.waitForLoadState('networkidle')
-    const email = page.locator('input[name="email"], input[type="email"]').first()
-    const pass  = page.locator('input[name="password"], input[type="password"]').first()
-    await email.fill(EMAIL)
-    await pass.fill(PASS)
+    await page.locator('input[name="email"], input[type="email"]').first().fill(EMAIL)
+    await page.locator('input[name="password"], input[type="password"]').first().fill(PASS)
     await page.locator('button[type="submit"]').first().click()
     await page.waitForTimeout(2000)
     await page.goto(`${BASE}/propostas`)
@@ -55,31 +51,36 @@ await login()
 await shot('proposals-list.png', async () => {
   await page.goto(`${BASE}/propostas`)
   await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(1200)
+  await page.waitForTimeout(1500)
 })
 
-// ── get first proposal id ─────────────────────────────────────────────────────
+// ── find the EmOrcamentacao proposal ─────────────────────────────────────────
 let proposalId = null
 try {
   const res = await page.evaluate(async () => {
-    const r = await fetch('/api/proposals?limit=1&depth=0')
+    const r = await fetch('/api/proposals?limit=50&depth=0')
     const j = await r.json()
-    return j?.docs?.[0]?.id
+    const orca = j?.docs?.find((p) => p.estado === 'EmOrcamentacao')
+    return orca?.id ?? j?.docs?.[0]?.id
   })
   proposalId = res
+  console.log(`Using proposal id: ${proposalId}`)
 } catch (_) {}
 
 // ── proposal detail tabs ───────────────────────────────────────────────────────
 if (proposalId) {
-  await page.goto(`${BASE}/propostas/${proposalId}`)
-  await page.waitForLoadState('networkidle')
-  await page.waitForTimeout(1000)
-
   // base data tab (default)
-  await shot('proposal-drawer.png', async () => {})
+  await shot('proposal-drawer.png', async () => {
+    await page.goto(`${BASE}/propostas/${proposalId}`)
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(1000)
+  })
 
-  // state selector — click to open state section
+  // state selector — open the transition area
   await shot('state-selector.png', async () => {
+    await page.goto(`${BASE}/propostas/${proposalId}`)
+    await page.waitForLoadState('networkidle')
+    await page.waitForTimeout(800)
     const btn = page.locator('button').filter({ hasText: /Avançar|Transição|estado/i }).first()
     if (await btn.count() > 0) await btn.click()
     await page.waitForTimeout(500)
@@ -90,43 +91,40 @@ if (proposalId) {
     await page.goto(`${BASE}/propostas/${proposalId}`)
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(800)
-    const criativaTab = page.locator('[role="tab"]').filter({ hasText: /criativ/i }).first()
-    if (await criativaTab.count() > 0) {
-      await criativaTab.click()
+    const tab = page.locator('[role="tab"]').filter({ hasText: /criativ/i }).first()
+    if (await tab.count() > 0) {
+      await tab.click()
       await page.waitForTimeout(600)
     }
   })
 
-  // budgeting tab
+  // budgeting tab — shows AI estimate
   await shot('budgeting-tab.png', async () => {
     await page.goto(`${BASE}/propostas/${proposalId}`)
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(800)
-    const orcTab = page.locator('[role="tab"]').filter({ hasText: /orçament/i }).first()
-    if (await orcTab.count() > 0) {
-      await orcTab.click()
-      await page.waitForTimeout(600)
+    const tab = page.locator('[role="tab"]').filter({ hasText: /orçament/i }).first()
+    if (await tab.count() > 0) {
+      await tab.click()
+      await page.waitForTimeout(800)
     }
   })
 
-  // estimate chat (same tab, scroll down or find chat section)
+  // estimate chat — bottom of budgeting tab
   await shot('estimate-chat.png', async () => {
     await page.goto(`${BASE}/propostas/${proposalId}`)
     await page.waitForLoadState('networkidle')
     await page.waitForTimeout(800)
-    const orcTab = page.locator('[role="tab"]').filter({ hasText: /orçament/i }).first()
-    if (await orcTab.count() > 0) {
-      await orcTab.click()
-      await page.waitForTimeout(600)
+    const tab = page.locator('[role="tab"]').filter({ hasText: /orçament/i }).first()
+    if (await tab.count() > 0) {
+      await tab.click()
+      await page.waitForTimeout(800)
     }
     await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight))
     await page.waitForTimeout(400)
   })
 } else {
   console.log('⚠ No proposals found — skipping detail screenshots')
-  ;['proposal-drawer.png','state-selector.png','creative-zone.png','budgeting-tab.png','estimate-chat.png'].forEach(f => {
-    console.log(`  placeholder: ${OUT}/${f}`)
-  })
 }
 
 // ── payload admin ─────────────────────────────────────────────────────────────
