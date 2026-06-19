@@ -72,52 +72,15 @@ The .env.local file must never go to the repository — confirm it is in .gitign
 
 ---
 
-## AI mock mode — active until API keys are available
+## AI integration — live with OpenAI
 
-ANTHROPIC_API_KEY and OPENAI_API_KEY are not yet available.
-All AI functionality must be implemented with mocks that simulate the real behaviour.
-Do not request API keys. Do not skip AI-related files. Build everything — just swap the real calls for mocks.
+Both AI functions use OpenAI GPT-4o with `temperature: 0` and `seed: 42` for deterministic output.
+Anthropic SDK is not used — do not introduce it.
 
-When the keys become available, the switch from mock to real will be a one-line change per client file.
+- `src/lib/ai/claudeClient.ts` — GPT-4o for estimate generation (text)
+- `src/lib/ai/openaiClient.ts` — GPT-4o Vision for image analysis (maquetes, ficheiros, Figma frames)
 
-### What to mock
-
-#### claudeClient.ts
-Do not import or initialise the Anthropic SDK.
-Export a mock function generateEstimateMock(prompt: string): Promise<string> that returns
-a hardcoded valid JSON string matching the Claude output schema defined in this file.
-The mock JSON must have 2-3 realistic items with rubricas, a plausible abordagem_tecnica,
-and nivelConfianca = "Médio" with a justification.
-Add a comment: // TODO: replace with real Anthropic SDK when ANTHROPIC_API_KEY is available
-
-#### openaiClient.ts
-Do not import or initialise the OpenAI SDK.
-Export a mock function analyzeImagesMock(imageUrls: string[]): Promise<string> that returns
-a hardcoded text description simulating what GPT-4o Vision would return for a stand mockup.
-Add a comment: // TODO: replace with real OpenAI SDK when OPENAI_API_KEY is available
-
-#### generateEstimateForProposal.ts
-Call the mock functions instead of the real clients.
-All other logic (buildPrompt, parseEstimate, saving to session, activityLog) must be fully implemented.
-The only mocked part is the actual API call.
-
-#### analyzeImages.ts
-Call analyzeImagesMock instead of the real GPT-4o Vision API.
-All other logic (fetching from R2, base64 conversion) must be fully implemented.
-
-### What NOT to mock
-- All Payload collections, hooks, and endpoints — implement fully with real logic
-- File uploads to R2 — implement fully (R2 keys will also be added later, use local storage as fallback if needed)
-- All UI components — implement fully
-- parseEstimate, buildPrompt — implement fully with real logic
-- The system prompt in estimateSystem.ts — write the real prompt, it does not require an API key
-
-### Switching to real AI later
-When API keys are available, the only changes needed are:
-1. claudeClient.ts: replace mock with real Anthropic SDK initialisation
-2. openaiClient.ts: replace mock with real OpenAI SDK initialisation
-3. generateEstimateForProposal.ts: call real clients instead of mocks
-Everything else stays the same.
+OPENAI_API_KEY must be set in `.env.local`. ANTHROPIC_API_KEY is unused — leave it blank.
 
 ---
 
@@ -126,9 +89,8 @@ Everything else stays the same.
 - **Framework:** Next.js 15 with App Router and strict TypeScript
 - **CMS / Backend:** Payload CMS 3 — runs inside Next.js, not a separate server
 - **Database:** PostgreSQL — managed by Payload, never manipulated directly
-- **Files:** Cloudflare R2 — via official Payload plugin (@payloadcms/storage-s3)
-- **AI — text and budgeting:** Claude API (claude-sonnet-4-20250514) via Anthropic SDK
-- **AI — image analysis:** GPT-4o Vision via OpenAI SDK
+- **Files:** Cloudflare R2 — via official Payload plugin (@payloadcms/storage-s3) — not yet configured, files stored locally in development
+- **AI — all:** OpenAI GPT-4o (text + vision) via official OpenAI SDK
 - **UI:** Shadcn/UI + Tailwind CSS
 - **Server state:** TanStack Query (react-query) for cache and refetch in the browser
 - **Email:** Resend with React Email for templates
