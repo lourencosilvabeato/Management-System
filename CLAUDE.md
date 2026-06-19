@@ -24,49 +24,63 @@ Atlassian: https://innovagency.atlassian.net/wiki/spaces/IPN/pages/1396080641/Te
 ```
 main          — docs only: .gitignore, CLAUDE.md, PROMPTS.md. Never contains code.
 dev           — integration branch. All feature branches are merged here.
-feature/...   — one branch per prompt. Created from dev, merged back into dev when complete.
+feature/...   — one branch per feature. Created from dev, merged back into dev when complete.
 ```
 
-Branch naming: `feature/prompt-XX-short-description`
+Branch naming: `feature/short-description`
 Examples:
-- `feature/prompt-01-scaffold`
-- `feature/prompt-02-collections`
-- `feature/prompt-03-beforechange-hooks`
+- `feature/scaffold`
+- `feature/collections`
+- `feature/ai-estimate`
+- `feature/ui-redesign`
 
 ## Git rule — automatic after every change
 
-After every prompt is successfully implemented, without exception, commit and push to the feature branch.
+After every feature is successfully implemented, without exception, commit and push to the feature branch.
 Do this automatically — do not wait to be asked.
 
 Required sequence after each completed step:
 
 ```
-# At the start of each prompt — create feature branch from dev
+# At the start of each feature — create feature branch from dev
 git checkout dev
 git pull origin dev
-git checkout -b feature/prompt-XX-short-description
+git checkout -b feature/short-description
 
 # After implementation is complete — commit and push feature branch
 git add .
-git commit -m "[Prompt XX] brief description of what was implemented"
-git push origin feature/prompt-XX-short-description
+git commit -m "brief description of what was implemented"
+git push origin feature/short-description
 
 # Merge into dev
 git checkout dev
-git merge feature/prompt-XX-short-description
+git merge feature/short-description
 git push origin dev
 ```
 
 Commit message examples:
-- "[Prompt 01] Project scaffold — Next.js + Payload + dependencies"
-- "[Prompt 02] Payload collections — full schema with access control"
-- "[Prompt 03] beforeChange hooks — transition validation and numbering"
-- "[Prompt 05] AI library — Claude client, GPT-4o Vision, buildPrompt"
+- "Project scaffold — Next.js + Payload + dependencies"
+- "Payload collections — full schema with access control"
+- "beforeChange hooks — transition validation and numbering"
+- "AI library — GPT-4o client, buildPrompt, estimate generation"
 
-Never accumulate changes from multiple prompts in a single commit.
+Never accumulate changes from multiple features in a single commit.
 Never push code to main — main is docs only.
 Never push without the current step's checks passing.
 The .env.local file must never go to the repository — confirm it is in .gitignore before the first push.
+
+
+---
+
+## AI integration — live with OpenAI
+
+Both AI functions use OpenAI GPT-4o with `temperature: 0` and `seed: 42` for deterministic output.
+Anthropic SDK is not used — do not introduce it.
+
+- `src/lib/ai/claudeClient.ts` — GPT-4o for estimate generation (text)
+- `src/lib/ai/openaiClient.ts` — GPT-4o Vision for image analysis (maquetes, ficheiros, Figma frames)
+
+OPENAI_API_KEY must be set in `.env.local`. ANTHROPIC_API_KEY is unused — leave it blank.
 
 ---
 
@@ -75,9 +89,8 @@ The .env.local file must never go to the repository — confirm it is in .gitign
 - **Framework:** Next.js 15 with App Router and strict TypeScript
 - **CMS / Backend:** Payload CMS 3 — runs inside Next.js, not a separate server
 - **Database:** PostgreSQL — managed by Payload, never manipulated directly
-- **Files:** Cloudflare R2 — via official Payload plugin (@payloadcms/storage-s3)
-- **AI — text and budgeting:** Claude API (claude-sonnet-4-20250514) via Anthropic SDK
-- **AI — image analysis:** GPT-4o Vision via OpenAI SDK
+- **Files:** Cloudflare R2 — via official Payload plugin (@payloadcms/storage-s3) — not yet configured, files stored locally in development
+- **AI — all:** OpenAI GPT-4o (text + vision) via official OpenAI SDK
 - **UI:** Shadcn/UI + Tailwind CSS
 - **Server state:** TanStack Query (react-query) for cache and refetch in the browser
 - **Email:** Resend with React Email for templates
