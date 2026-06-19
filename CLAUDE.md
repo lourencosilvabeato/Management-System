@@ -24,49 +24,100 @@ Atlassian: https://innovagency.atlassian.net/wiki/spaces/IPN/pages/1396080641/Te
 ```
 main          — docs only: .gitignore, CLAUDE.md, PROMPTS.md. Never contains code.
 dev           — integration branch. All feature branches are merged here.
-feature/...   — one branch per prompt. Created from dev, merged back into dev when complete.
+feature/...   — one branch per feature. Created from dev, merged back into dev when complete.
 ```
 
-Branch naming: `feature/prompt-XX-short-description`
+Branch naming: `feature/short-description`
 Examples:
-- `feature/prompt-01-scaffold`
-- `feature/prompt-02-collections`
-- `feature/prompt-03-beforechange-hooks`
+- `feature/scaffold`
+- `feature/collections`
+- `feature/ai-estimate`
+- `feature/ui-redesign`
 
 ## Git rule — automatic after every change
 
-After every prompt is successfully implemented, without exception, commit and push to the feature branch.
+After every feature is successfully implemented, without exception, commit and push to the feature branch.
 Do this automatically — do not wait to be asked.
 
 Required sequence after each completed step:
 
 ```
-# At the start of each prompt — create feature branch from dev
+# At the start of each feature — create feature branch from dev
 git checkout dev
 git pull origin dev
-git checkout -b feature/prompt-XX-short-description
+git checkout -b feature/short-description
 
 # After implementation is complete — commit and push feature branch
 git add .
-git commit -m "[Prompt XX] brief description of what was implemented"
-git push origin feature/prompt-XX-short-description
+git commit -m "brief description of what was implemented"
+git push origin feature/short-description
 
 # Merge into dev
 git checkout dev
-git merge feature/prompt-XX-short-description
+git merge feature/short-description
 git push origin dev
 ```
 
 Commit message examples:
-- "[Prompt 01] Project scaffold — Next.js + Payload + dependencies"
-- "[Prompt 02] Payload collections — full schema with access control"
-- "[Prompt 03] beforeChange hooks — transition validation and numbering"
-- "[Prompt 05] AI library — Claude client, GPT-4o Vision, buildPrompt"
+- "Project scaffold — Next.js + Payload + dependencies"
+- "Payload collections — full schema with access control"
+- "beforeChange hooks — transition validation and numbering"
+- "AI library — GPT-4o client, buildPrompt, estimate generation"
 
-Never accumulate changes from multiple prompts in a single commit.
+Never accumulate changes from multiple features in a single commit.
 Never push code to main — main is docs only.
 Never push without the current step's checks passing.
 The .env.local file must never go to the repository — confirm it is in .gitignore before the first push.
+
+
+---
+
+## AI mock mode — active until API keys are available
+
+ANTHROPIC_API_KEY and OPENAI_API_KEY are not yet available.
+All AI functionality must be implemented with mocks that simulate the real behaviour.
+Do not request API keys. Do not skip AI-related files. Build everything — just swap the real calls for mocks.
+
+When the keys become available, the switch from mock to real will be a one-line change per client file.
+
+### What to mock
+
+#### claudeClient.ts
+Do not import or initialise the Anthropic SDK.
+Export a mock function generateEstimateMock(prompt: string): Promise<string> that returns
+a hardcoded valid JSON string matching the Claude output schema defined in this file.
+The mock JSON must have 2-3 realistic items with rubricas, a plausible abordagem_tecnica,
+and nivelConfianca = "Médio" with a justification.
+Add a comment: // TODO: replace with real Anthropic SDK when ANTHROPIC_API_KEY is available
+
+#### openaiClient.ts
+Do not import or initialise the OpenAI SDK.
+Export a mock function analyzeImagesMock(imageUrls: string[]): Promise<string> that returns
+a hardcoded text description simulating what GPT-4o Vision would return for a stand mockup.
+Add a comment: // TODO: replace with real OpenAI SDK when OPENAI_API_KEY is available
+
+#### generateEstimateForProposal.ts
+Call the mock functions instead of the real clients.
+All other logic (buildPrompt, parseEstimate, saving to session, activityLog) must be fully implemented.
+The only mocked part is the actual API call.
+
+#### analyzeImages.ts
+Call analyzeImagesMock instead of the real GPT-4o Vision API.
+All other logic (fetching from R2, base64 conversion) must be fully implemented.
+
+### What NOT to mock
+- All Payload collections, hooks, and endpoints — implement fully with real logic
+- File uploads to R2 — implement fully (R2 keys will also be added later, use local storage as fallback if needed)
+- All UI components — implement fully
+- parseEstimate, buildPrompt — implement fully with real logic
+- The system prompt in estimateSystem.ts — write the real prompt, it does not require an API key
+
+### Switching to real AI later
+When API keys are available, the only changes needed are:
+1. claudeClient.ts: replace mock with real Anthropic SDK initialisation
+2. openaiClient.ts: replace mock with real OpenAI SDK initialisation
+3. generateEstimateForProposal.ts: call real clients instead of mocks
+Everything else stays the same.
 
 ---
 
