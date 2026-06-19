@@ -1,4 +1,4 @@
-# CLAUDE.md — Proposal Management System (Niu / Innovagency)
+# CLAUDE.md — Proposal Management System
 
 This file is the source of truth for Claude Code.
 Read it in full before any implementation.
@@ -8,14 +8,14 @@ If there is a conflict between this file and any other instruction, this file ta
 
 ## Project context
 
-Niu is a physical asset production agency — stands, totems, signage, event installations.
+The agency is a physical asset production agency — stands, totems, signage, event installations.
 The budgeting process is done manually and in isolation, without input from the production team.
 
 This system digitises the full commercial cycle and uses AI to assist budgeting.
 The focus is the Commercial Module. The Production Module is out of scope for this prototype.
 
 GitHub repository: https://github.com/lourencosilvabeato-blip/Sistema-NIU
-Atlassian: https://innovagency.atlassian.net/wiki/spaces/IPN/pages/1396080641/Tentativa+de+Especifica+o+Funcional+do+Prot+tipo
+Project management: <your-project-management-tool>
 
 ---
 
@@ -190,7 +190,7 @@ Fields: nome, referencia, unidade, custoMedio (number), notas, ativo (boolean)
 Examples: "Lona frontlit" / "m²" / 8.50 | "Perfil alumínio octanorm" / "m linear" / 45.00
 
 ### machines
-Inventory of machines available at Niu.
+Inventory of machines available at the agency.
 Fields: nome, tipo, descricao, disponivel (boolean)
 Examples: "Fresa CNC" | "Plotter de corte vinyl" | "Impressora UV"
 

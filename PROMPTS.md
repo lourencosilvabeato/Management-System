@@ -1,4 +1,4 @@
-# PROMPTS.md — NIU System
+# PROMPTS.md — Proposal Management System
 # Feature Reference Guide for Claude Code
 
 Read CLAUDE.md in full before starting any implementation.
@@ -30,7 +30,7 @@ Six collections with full schema:
 - **proposals** — central collection with all fields including sessaoOrcamentacao, activityLog, estado, estimativaEditada
 - **users** — with role enum (account | criativo | producao | admin)
 - **materials** — AI knowledge base (nome, referencia, unidade, custoMedio)
-- **machines** — Niu machine inventory (nome, tipo, descricao, disponivel)
+- **machines** — machine inventory (nome, tipo, descricao, disponivel)
 - **internalRates** — hourly cost per profile (perfil, departamento, custoHora)
 - **projectLibrary** — historical projects for AI benchmarking
 
