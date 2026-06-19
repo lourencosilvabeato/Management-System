@@ -192,8 +192,8 @@ src/
 ## Getting Started
 
 ```bash
-git clone https://github.com/lourencosilvabeato/Sistema-NIU.git
-cd Sistema-NIU
+git clone https://github.com/lourencosilvabeato/Management-System.git
+cd Management-System
 npm install
 cp .env.example .env.local
 # fill in DATABASE_URI and OPENAI_API_KEY at minimum
