@@ -42,6 +42,9 @@ next-env.d.ts
 
 /media
 
+# Local assets (not committed)
+src/assets/logo.jpg
+
 # Playwright
 node_modules/
 /test-results/
