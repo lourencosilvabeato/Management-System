@@ -51,7 +51,7 @@ export function Sidebar({ currentUser }: Props) {
       >
         <Image
           src={logoSrc}
-          alt="NIU"
+          alt="Logo"
           width={80}
           height={80}
           style={{ borderRadius: 4, flexShrink: 0 }}

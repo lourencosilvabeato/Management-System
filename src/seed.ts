@@ -52,7 +52,7 @@ const DUMMY_ESTIMATE = {
 }
 
 async function main() {
-  console.log('🌱 NIU Seed Script')
+  console.log('🌱 Seed Script')
   console.log('──────────────────')
 
   const payload = await getPayload({ config })
@@ -74,10 +74,10 @@ async function main() {
   console.log('\n👤 Creating users...')
 
   const userDefs = [
-    { email: 'admin@niu.pt', nome: 'Admin NIU', role: 'admin' },
-    { email: 'account@niu.pt', nome: 'João Ferreira', role: 'account' },
-    { email: 'criativo@niu.pt', nome: 'Sara Pereira', role: 'criativo' },
-    { email: 'producao@niu.pt', nome: 'Miguel Santos', role: 'producao' },
+    { email: 'admin@niu.pt', nome: 'Admin', role: 'admin' },
+    { email: 'account@niu.pt', nome: 'Gestor de Conta', role: 'account' },
+    { email: 'criativo@niu.pt', nome: 'Designer Criativo', role: 'criativo' },
+    { email: 'producao@niu.pt', nome: 'Técnico de Produção', role: 'producao' },
   ] as const
 
   const createdUsers: Record<string, number | string> = {}
@@ -90,9 +90,20 @@ async function main() {
       overrideAccess: true,
     })
 
-    if (found.totalDocs > 0 && !FORCE) {
-      console.log(`  ↩  ${u.email} already exists, skipping`)
-      createdUsers[u.role] = found.docs[0].id
+    if (found.totalDocs > 0) {
+      if (!FORCE) {
+        console.log(`  ↩  ${u.email} already exists, skipping`)
+        createdUsers[u.role] = found.docs[0].id
+        continue
+      }
+      const updated = await payload.update({
+        collection: 'users',
+        id: found.docs[0].id,
+        data: { nome: u.nome, role: u.role },
+        overrideAccess: true,
+      })
+      createdUsers[u.role] = updated.id
+      console.log(`  ✓  ${u.email} (${u.role}) — updated`)
       continue
     }
 
@@ -291,6 +302,9 @@ async function main() {
       console.log(`  ↩  "${nomeProjeto}" already exists, skipping`)
       return
     }
+    if (found.totalDocs > 0 && FORCE) {
+      await payload.delete({ collection: 'proposals', id: found.docs[0].id, overrideAccess: true })
+    }
     await creator()
     console.log(`  ✓  ${label}`)
   }
@@ -304,8 +318,8 @@ async function main() {
         cliente: 'TechCorp Portugal Lda',
         account: accountId,
         estado: 'Recebida',
-        contactoNome: 'Inês Rodrigues',
-        contactoEmail: 'ines@techcorp.pt',
+        contactoNome: 'Directora de Comunicação',
+        contactoEmail: 'info@techcorp.pt',
         prazoResposta: ts(14),
         activityLog: [
           { evento: 'Proposal created', user: accountId, timestamp: ts(-5) },
@@ -325,8 +339,8 @@ async function main() {
         cliente: 'Global Consulting SA',
         account: accountId,
         estado: 'EmElaboracao',
-        contactoNome: 'Carlos Mendes',
-        contactoEmail: 'carlos@globalconsulting.pt',
+        contactoNome: 'Responsável de Marketing',
+        contactoEmail: 'info@globalconsulting.pt',
         prazoResposta: ts(21),
         estadoCriativo: 'EmRevisao',
         activityLog: [
@@ -341,16 +355,16 @@ async function main() {
   )
 
   // 3. EmOrcamentacao — with dummy session
-  await upsertProposal('Stand IST 2026 (EmOrcamentacao)', 'Stand Innovagency IST 2026', () =>
+  await upsertProposal('Stand Expo Tech 2026 (EmOrcamentacao)', 'Stand Expo Tech 2026', () =>
     payload.create({
       collection: 'proposals',
       data: {
-        nomeProjeto: 'Stand Innovagency IST 2026',
-        cliente: 'Innovagency',
+        nomeProjeto: 'Stand Expo Tech 2026',
+        cliente: 'Nexus Eventos Lda.',
         account: accountId,
         estado: 'EmOrcamentacao',
-        contactoNome: 'Pedro Alves',
-        contactoEmail: 'pedro@innovagency.com',
+        contactoNome: 'Director de Marketing',
+        contactoEmail: 'marketing@nexuseventos.pt',
         prazoResposta: ts(10),
         estadoCriativo: 'Aprovado',
         activityLog: [

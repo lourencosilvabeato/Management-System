@@ -7,7 +7,7 @@ import { Sidebar } from '@/components/layout/Sidebar'
 import { TopBar } from '@/components/layout/TopBar'
 
 export const dynamic = 'force-dynamic'
-export const metadata = { title: 'Propostas — Niu' }
+export const metadata = { title: 'Propostas' }
 
 export default async function PropostasPage() {
   const payload = await getPayload({ config })
@@ -44,7 +44,7 @@ export default async function PropostasPage() {
       <div style={{ marginLeft: 220, flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
         <TopBar
           title="Propostas"
-          subtitle="Pipeline comercial · Niu / Innovagency"
+          subtitle="Pipeline comercial"
         />
 
         <main style={{ flex: 1, padding: '32px', background: '#ffffff' }}>

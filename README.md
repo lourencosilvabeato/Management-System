@@ -1,4 +1,4 @@
-# NIU — Proposal Management System
+# Proposal Management System
 
 ![Next.js](https://img.shields.io/badge/Next.js-15-black?logo=next.js)
 ![Payload CMS](https://img.shields.io/badge/Payload_CMS-3-blue?logo=payloadcms)
@@ -8,7 +8,7 @@
 
 ## Overview
 
-Niu is a brand activation and physical production agency specialising in stands, totems, signage, and event installations. This system digitises the full commercial proposal lifecycle — from intake to win/loss — replacing a manual, spreadsheet-based process. The differentiating feature is AI-assisted budgeting: GPT-4o Vision analyses mockup images to extract dimensions and materials, then GPT-4o generates a structured cost estimate covering every stage from raw materials to on-site installation and dismantling. Built as a working prototype focused on the commercial module.
+A physical asset production agency specialising in stands, totems, signage, and event installations needed to digitise its full commercial proposal lifecycle — from intake to win/loss — replacing a manual, spreadsheet-based process. The differentiating feature is AI-assisted budgeting: GPT-4o Vision analyses mockup images to extract dimensions and materials, then GPT-4o generates a structured cost estimate covering every stage from raw materials to on-site installation and dismantling. Built as a working prototype focused on the commercial module.
 
 ## Screenshots
 
@@ -93,7 +93,7 @@ Niu is a brand activation and physical production agency specialising in stands,
 | Database | PostgreSQL 16 | Managed by Payload's DB adapter; never manipulated directly |
 | AI — Text | GPT-4o via OpenAI SDK | Structured JSON estimate generation with deterministic output |
 | AI — Vision | GPT-4o Vision via OpenAI SDK | Mockup image and document analysis |
-| UI | Shadcn/UI + Tailwind CSS | Accessible component primitives with a custom NIU brand theme |
+| UI | Shadcn/UI + Tailwind CSS | Accessible component primitives with a custom brand theme |
 | Client State | TanStack Query | Cache, refetch, and loading states for all browser→server calls |
 | File Storage | Cloudflare R2 (S3-compatible) | Via `@payloadcms/storage-s3` — local storage in development |
 | Auth | Payload built-in | Email + password; session cookie; role checked on every request |

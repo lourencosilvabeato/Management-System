@@ -25,17 +25,17 @@ async function createBriefingPDF() {
 
   // Header
   page.drawRectangle({ x: 0, y: height - 60, width, height: 60, color: rgb(0, 0, 0) })
-  draw('NIU — BRIEFING DE PROJETO', 40, height - 38, 16, bold, rgb(1, 1, 1))
+  draw('BRIEFING DE PROJETO', 40, height - 38, 16, bold, rgb(1, 1, 1))
 
   // Project info
   draw('PROJETO', 40, height - 100, 9, bold, rgb(0.5, 0.5, 0.5))
-  draw('Stand Web Summit 2026 — Innovagency', 40, height - 116, 13, bold)
+  draw('Stand Expo Tech Lisboa 2026', 40, height - 116, 13, bold)
 
   draw('CLIENTE', 40, height - 150, 9, bold, rgb(0.5, 0.5, 0.5))
-  draw('Innovagency, Lda.', 40, height - 166, 11)
+  draw('Nexus Eventos Lda.', 40, height - 166, 11)
 
   draw('EVENTO', 40, height - 200, 9, bold, rgb(0.5, 0.5, 0.5))
-  draw('Web Summit 2026 — Altice Arena, Lisboa', 40, height - 216, 11)
+  draw('Expo Tech Lisboa 2026 — Pavilhão Central', 40, height - 216, 11)
 
   draw('PRAZO DE RESPOSTA', 300, height - 200, 9, bold, rgb(0.5, 0.5, 0.5))
   draw('30 de Junho de 2026', 300, height - 216, 11)
@@ -46,7 +46,7 @@ async function createBriefingPDF() {
   // Briefing
   draw('BRIEFING', 40, height - 270, 9, bold, rgb(0.5, 0.5, 0.5))
   const briefingLines = [
-    'A Innovagency pretende marcar presença no Web Summit 2026 com um stand premium de 6m x 4m.',
+    'A Nexus Eventos pretende marcar presença no Expo Tech Lisboa 2026 com um stand premium de 6m x 4m.',
     'O stand deve refletir os valores da marca: inovação, tecnologia e design sofisticado.',
     '',
     'O conceito criativo baseia-se numa estética minimalista em preto e branco, com elementos',
@@ -102,7 +102,7 @@ async function createStandPNG() {
   <rect width="${W}" height="${H}" fill="#f5f5f5"/>
 
   <!-- Title -->
-  <text x="40" y="48" font-size="22" font-weight="bold" fill="#111">Stand Innovagency — Web Summit 2026</text>
+  <text x="40" y="48" font-size="22" font-weight="bold" fill="#111">Stand Nexus Eventos — Expo Tech Lisboa 2026</text>
   <text x="40" y="72" font-size="13" fill="#666">Maquete de referência — Área: 6m × 4m | Altura máx.: 2.5m</text>
   <line x1="40" y1="84" x2="1160" y2="84" stroke="#ddd" stroke-width="1"/>
 
@@ -167,7 +167,7 @@ async function createStandPNG() {
 
   <!-- Brand area -->
   <rect x="720" y="155" width="380" height="160" fill="#1a1a1a" rx="2"/>
-  <text x="910" y="225" font-size="32" font-weight="bold" fill="white" text-anchor="middle">innovagency</text>
+  <text x="910" y="225" font-size="32" font-weight="bold" fill="white" text-anchor="middle">NEXUS</text>
   <text x="910" y="258" font-size="13" fill="#aaa" text-anchor="middle">We create brands that move people</text>
 
   <!-- Left LED totem -->
@@ -219,7 +219,7 @@ async function createStandPNG() {
   `).join('')}
 
   <!-- Footer -->
-  <text x="40" y="870" font-size="10" fill="#aaa">Documento para efeitos de orçamentação. Sujeito a alterações após aprovação criativa. © Niu / Innovagency 2026</text>
+  <text x="40" y="870" font-size="10" fill="#aaa">Documento para efeitos de orçamentação. Sujeito a alterações após aprovação criativa. © 2026</text>
 </svg>`
 
   const outPath = join(outDir, 'stand-maquete.png')

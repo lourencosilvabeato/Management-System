@@ -46,7 +46,7 @@
     --radius-4xl: calc(var(--radius) * 1);
 }
 
-/* ── NIU brand — black/white, faithful to niu.pt ── */
+/* ── Brand theme — black/white ── */
 :root {
     --background:            #ffffff;
     --foreground:            #222222;
@@ -102,12 +102,12 @@
   ::-webkit-scrollbar-thumb:hover  { background: #999999; }
 }
 
-/* ── NIU utility classes ─────────────────────── */
+/* ── Utility classes ─────────────────────── */
 .font-heading { font-family: 'Montserrat', sans-serif; }
 .font-body    { font-family: 'Inter', sans-serif; }
 .font-mono    { font-family: 'JetBrains Mono', monospace; }
 
-.niu-label {
+.app-label {
   font-family: 'Montserrat', sans-serif;
   font-size: 0.6875rem;
   font-weight: 600;
