@@ -6,6 +6,8 @@
 ![PostgreSQL](https://img.shields.io/badge/PostgreSQL-16-336791?logo=postgresql)
 ![GPT-4o](https://img.shields.io/badge/GPT--4o-Vision-412991?logo=openai)
 
+> Built with [Claude Code](https://claude.ai/code) as the primary development tool — GPT-4o Vision powers the AI budgeting feature at the core of the product.
+
 ## Overview
 
 A physical asset production agency specialising in stands, totems, signage, and event installations needed to digitise its full commercial proposal lifecycle — from intake to win/loss — replacing a manual, spreadsheet-based process. The differentiating feature is AI-assisted budgeting: GPT-4o Vision analyses mockup images to extract dimensions and materials, then GPT-4o generates a structured cost estimate covering every stage from raw materials to on-site installation and dismantling. Built as a working prototype focused on the commercial module.
