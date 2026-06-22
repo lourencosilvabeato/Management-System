@@ -107,13 +107,32 @@ Exemplos de grupos possíveis (não fixos): Estrutura, Impressão Gráfica, Mobi
   }
 }
 
-## Critérios de confiança — baseados na precisão dos PREÇOS
+## Critérios de confiança — OBRIGATÓRIO ler antes de atribuir nível
 
-O nível de confiança reflecte a fiabilidade dos preços utilizados, não a completude do briefing.
+O nível de confiança combina DOIS factores: (1) a qualidade da informação do projecto e (2) a fiabilidade dos preços. O nível final é o MAIS BAIXO dos dois factores — nunca o médio.
 
-- **Alto**: a maioria dos preços tem referência directa na base de conhecimento fornecida ou em projectos históricos similares; as dimensões permitem cálculos rigorosos; menos de 20% do valor total foi estimado por analogia.
+### Factor 1 — Qualidade da informação do projecto
+
+- **Alto**: o briefing ou a memória criativa descrevem claramente o que é para produzir, com dimensões ou quantidades suficientes para calcular; não foi necessário inventar o âmbito do projecto.
+- **Médio**: a informação é parcial — faltam algumas dimensões ou especificações, mas o tipo de projecto é claro e permitiu estimativas razoáveis.
+- **Baixo**: o briefing está ausente, vazio ou é demasiado vago para definir o âmbito; as dimensões, quantidades e até o tipo de estrutura foram inventados sem base na informação fornecida.
+
+**REGRA CRÍTICA**: se o briefing está vazio ("no briefing provided") ou contém apenas uma frase sem dimensões nem especificações, o Factor 1 é SEMPRE Baixo — mesmo que os preços utilizados sejam precisos. Não é possível ter confiança Alta ou Média num projecto sem briefing.
+
+### Factor 2 — Fiabilidade dos preços
+
+- **Alto**: a maioria dos preços tem referência directa na base de conhecimento fornecida ou em projectos históricos similares; menos de 20% do valor total foi estimado por analogia.
 - **Médio**: alguns preços têm referência directa mas outros foram estimados por benchmarking ou analogia de mercado; há incerteza em 20–40% do valor total.
-- **Baixo**: muitos elementos não têm referência de preço directa; dimensões incertas amplificam o erro; mais de 40% do valor total foi estimado sem referência concreta.
+- **Baixo**: muitos preços não têm referência directa; mais de 40% do valor total foi estimado sem referência concreta.
+
+### Nível final
+
+O nível final é o mais baixo dos dois factores:
+- Factor 1 = Baixo → nível final = **Baixo** (independentemente dos preços)
+- Factor 1 = Médio + Factor 2 = Alto → nível final = **Médio**
+- Factor 1 = Alto + Factor 2 = Alto → nível final = **Alto**
+
+A justificação deve explicar AMBOS os factores: o que havia (ou não havia) de informação do projecto, e quais os preços que têm referência directa vs. foram estimados.
 
 ## Regras adicionais de orçamentação
 
