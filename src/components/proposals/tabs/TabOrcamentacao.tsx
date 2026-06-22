@@ -17,7 +17,7 @@ const LOADING_MESSAGES = [
   'A finalizar orçamento...',
 ]
 
-const MAX_POLL_COUNT = 30
+const MAX_POLL_COUNT = 40
 
 interface ConversaMsg {
   role: 'user' | 'assistant'
@@ -74,24 +74,41 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
   const [generationError, setGenerationError] = useState(false)
   const [loadingMsgIdx, setLoadingMsgIdx] = useState(0)
   const [previousOpen, setPreviousOpen] = useState(false)
-  const [regenerating, setRegenerating] = useState(false)
+  // Number of sessions when generation was triggered — used to detect when a NEW session arrives
+  const [sessionsAtTrigger, setSessionsAtTrigger] = useState<number | null>(null)
+  const [triggering, setTriggering] = useState(false)
 
   const onRefreshRef = useRef(onRefresh)
   useEffect(() => {
     onRefreshRef.current = onRefresh
   }, [onRefresh])
 
-  const [triggering, setTriggering] = useState(false)
-
   const estado = proposal.estado
   const isReadOnly = estado === 'Ganha' || estado === 'Perdida'
-  // Only poll when we know generation was triggered (session exists but estimate pending)
-  const hasSession = sessoes.length > 0
-  const isGenerating =
-    (estado === 'EmOrcamentacao' && hasSession && !currentEstimativa) || regenerating
+  // Waiting for a NEW session (triggered manually or via regenerate)
+  const waitingForNewSession = sessionsAtTrigger !== null && sessoes.length <= sessionsAtTrigger
+  // Waiting for estimate inside current session
+  const waitingForEstimate = sessoes.length > 0 && !currentEstimativa && sessionsAtTrigger === null
+  const isGenerating = waitingForNewSession || waitingForEstimate
 
-  // Sync estimate from proposal when it arrives (polling completed)
+  // Sync estimate from proposal when it arrives
   useEffect(() => {
+    // If we're waiting for a new session, only proceed when a new session actually appears
+    if (sessionsAtTrigger !== null) {
+      if (sessoes.length <= sessionsAtTrigger) return // new session not yet created
+      // New session arrived — check if it has an estimate
+      const newSessao = sessoes[sessoes.length - 1]
+      const est = newSessao ? getEstimativa(newSessao) : null
+      if (!est) return // session exists but estimate still pending
+      setCurrentEstimativa(est)
+      setAbordagem(newSessao?.abordagemTecnica ?? '')
+      setNivelConfianca(newSessao?.nivelConfianca ?? '')
+      setNivelJustificacao(newSessao?.nivelConfiancaJustificacao ?? '')
+      setConversaIA(getMsgs(newSessao!))
+      setSessionsAtTrigger(null)
+      return
+    }
+    // Normal first-load sync
     if (currentEstimativa) return
     if (!activeSessao) return
     const est = getEstimativa(activeSessao)
@@ -101,7 +118,6 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     setNivelConfianca(activeSessao.nivelConfianca ?? '')
     setNivelJustificacao(activeSessao.nivelConfiancaJustificacao ?? '')
     setConversaIA(getMsgs(activeSessao))
-    setRegenerating(false)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [proposal.sessaoOrcamentacao])
 
@@ -119,12 +135,13 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     if (!isGenerating || generationError) return
     if (pollCount >= MAX_POLL_COUNT) {
       setGenerationError(true)
+      setSessionsAtTrigger(null)
       return
     }
     const timeout = setTimeout(() => {
       setPollCount((prev) => prev + 1)
       onRefreshRef.current()
-    }, 3000)
+    }, 4000)
     return () => clearTimeout(timeout)
   }, [isGenerating, pollCount, generationError])
 
@@ -143,11 +160,11 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     setConversaIA(data.conversaIA)
   }
 
-  const handleRegenerate = async () => {
-    setRegenerating(true)
-    setCurrentEstimativa(null)
+  const triggerGeneration = async () => {
+    setTriggering(true)
     setGenerationError(false)
     setPollCount(0)
+    setSessionsAtTrigger(sessoes.length) // remember current count; wait for sessoes.length+1
     try {
       await fetch(`/api/proposals/${proposal.id}/transition`, {
         method: 'POST',
@@ -162,7 +179,32 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
       onRefreshRef.current()
     } catch {
       setGenerationError(true)
-      setRegenerating(false)
+      setSessionsAtTrigger(null)
+    } finally {
+      setTriggering(false)
+    }
+  }
+
+  const handleRegenerate = async () => {
+    setCurrentEstimativa(null)
+    setGenerationError(false)
+    setPollCount(0)
+    setSessionsAtTrigger(sessoes.length)
+    try {
+      await fetch(`/api/proposals/${proposal.id}/transition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ novoEstado: 'EmElaboracao' }),
+      })
+      await fetch(`/api/proposals/${proposal.id}/transition`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ novoEstado: 'EmOrcamentacao' }),
+      })
+      onRefreshRef.current()
+    } catch {
+      setGenerationError(true)
+      setSessionsAtTrigger(null)
     }
   }
 
@@ -192,24 +234,7 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
           size="sm"
           className="btn-niu"
           disabled={triggering}
-          onClick={async () => {
-            setTriggering(true)
-            try {
-              await fetch(`/api/proposals/${proposal.id}/transition`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ novoEstado: 'EmElaboracao' }),
-              })
-              await fetch(`/api/proposals/${proposal.id}/transition`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ novoEstado: 'EmOrcamentacao' }),
-              })
-              onRefreshRef.current()
-            } catch {
-              setTriggering(false)
-            }
-          }}
+          onClick={() => void triggerGeneration()}
         >
           {triggering ? 'A iniciar...' : 'Gerar estimativa'}
         </Button>
