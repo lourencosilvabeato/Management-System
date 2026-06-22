@@ -9,8 +9,8 @@ export async function generateEstimate(
   const response = await openai.chat.completions.create(
     {
       model: 'gpt-4o-mini',
-      max_tokens: 4096,
-      temperature: 0.1,
+      max_tokens: 8192,
+      temperature: 0,
       messages: [
         { role: 'system', content: ESTIMATE_SYSTEM_PROMPT },
         ...messages,
