@@ -8,7 +8,7 @@ export async function generateEstimate(
 ): Promise<string> {
   const response = await openai.chat.completions.create(
     {
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       max_tokens: 4096,
       temperature: 0.2,
       messages: [
@@ -16,7 +16,7 @@ export async function generateEstimate(
         ...messages,
       ],
     },
-    { signal: AbortSignal.timeout(90000) },
+    { signal: AbortSignal.timeout(60000) },
   )
   return response.choices[0]?.message?.content ?? ''
 }

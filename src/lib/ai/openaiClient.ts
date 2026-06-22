@@ -5,7 +5,7 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY })
 export async function analyzeImagesVision(base64Images: string[]): Promise<string> {
   const response = await openai.chat.completions.create(
     {
-      model: 'gpt-4o',
+      model: 'gpt-4o-mini',
       max_tokens: 1024,
       temperature: 0.2,
       messages: [
@@ -20,14 +20,14 @@ export async function analyzeImagesVision(base64Images: string[]): Promise<strin
               type: 'image_url' as const,
               image_url: {
                 url: `data:image/jpeg;base64,${b64}`,
-                detail: 'high' as const,
+                detail: 'low' as const,
               },
             })),
           ],
         },
       ],
     },
-    { signal: AbortSignal.timeout(45000) },
+    { signal: AbortSignal.timeout(30000) },
   )
   return response.choices[0]?.message?.content ?? ''
 }

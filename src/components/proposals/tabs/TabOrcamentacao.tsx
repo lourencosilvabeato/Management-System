@@ -281,7 +281,7 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
           {LOADING_MESSAGES[loadingMsgIdx]}
         </p>
         <p className="text-xs text-muted-foreground">
-          A estimativa pode demorar até 30 segundos.
+          A estimativa pode demorar até 60 segundos.
         </p>
       </div>
     )
