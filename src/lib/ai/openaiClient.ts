@@ -7,6 +7,7 @@ export async function analyzeImagesVision(base64Images: string[]): Promise<strin
     model: 'gpt-4o',
     max_tokens: 1024,
     temperature: 0.2,
+    seed: 42,
     messages: [
       {
         role: 'user',
