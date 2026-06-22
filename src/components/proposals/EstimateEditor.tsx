@@ -378,7 +378,7 @@ export function EstimateEditor({
                         }
                       />
                     )}
-                    <span className="col-span-1 text-right text-xs font-mono">
+                    <span className="col-span-1 text-right text-xs">
                       {r.custo_total.toFixed(0)}€
                     </span>
                     {readOnly ? (
@@ -394,7 +394,7 @@ export function EstimateEditor({
                     )}
                   </div>
                   {r.fonte && (
-                    <p className="text-[10px] text-muted-foreground/70 italic pl-1 leading-tight">
+                    <p className="text-xs text-muted-foreground italic pl-1 leading-tight">
                       {r.fonte}
                     </p>
                   )}
