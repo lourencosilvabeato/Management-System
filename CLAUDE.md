@@ -74,7 +74,7 @@ The .env.local file must never go to the repository — confirm it is in .gitign
 
 ## AI integration — live with OpenAI
 
-Both AI functions use OpenAI GPT-4o with `temperature: 0` and `seed: 42` for deterministic output.
+Both AI functions use OpenAI GPT-4o with `temperature: 0.2` for consistent but input-sensitive output.
 Anthropic SDK is not used — do not introduce it.
 
 - `src/lib/ai/claudeClient.ts` — GPT-4o for estimate generation (text)
