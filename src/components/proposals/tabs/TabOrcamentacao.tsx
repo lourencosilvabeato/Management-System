@@ -81,10 +81,14 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     onRefreshRef.current = onRefresh
   }, [onRefresh])
 
+  const [triggering, setTriggering] = useState(false)
+
   const estado = proposal.estado
   const isReadOnly = estado === 'Ganha' || estado === 'Perdida'
+  // Only poll when we know generation was triggered (session exists but estimate pending)
+  const hasSession = sessoes.length > 0
   const isGenerating =
-    (estado === 'EmOrcamentacao' && !currentEstimativa) || regenerating
+    (estado === 'EmOrcamentacao' && hasSession && !currentEstimativa) || regenerating
 
   // Sync estimate from proposal when it arrives (polling completed)
   useEffect(() => {
@@ -177,21 +181,48 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     )
   }
 
-  // State: no session at all
+  // State: no session — generation was never triggered (e.g. seeded proposals)
   if (!activeSessao && !isGenerating) {
     return (
-      <div className="py-6 text-sm text-muted-foreground">
-        Nenhuma sessão de orçamentação encontrada.
+      <div className="py-6 space-y-3">
+        <p className="text-sm text-muted-foreground">
+          Nenhuma estimativa gerada ainda. Clica em Gerar para iniciar a análise com IA.
+        </p>
+        <Button
+          size="sm"
+          className="btn-niu"
+          disabled={triggering}
+          onClick={async () => {
+            setTriggering(true)
+            try {
+              await fetch(`/api/proposals/${proposal.id}/transition`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ novoEstado: 'EmElaboracao' }),
+              })
+              await fetch(`/api/proposals/${proposal.id}/transition`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ novoEstado: 'EmOrcamentacao' }),
+              })
+              onRefreshRef.current()
+            } catch {
+              setTriggering(false)
+            }
+          }}
+        >
+          {triggering ? 'A iniciar...' : 'Gerar estimativa'}
+        </Button>
       </div>
     )
   }
 
-  // State: generation error
+  // State: generation error (polling timed out)
   if (generationError) {
     return (
       <div className="py-6 space-y-4">
         <p className="text-sm text-destructive">
-          Não foi possível gerar a estimativa. Verifica se a API de IA está configurada.
+          A geração demorou demasiado ou ocorreu um erro. Verifica os logs do servidor e tenta novamente.
         </p>
         <Button
           variant="outline"

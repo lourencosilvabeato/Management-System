@@ -40,10 +40,15 @@ async function fetchKnowledgeBase(payload: BasePayload): Promise<KnowledgeBase> 
 }
 
 function getMockupUrls(proposal: Proposal): string[] {
+  const base = (process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000').replace(/\/$/, '')
   if (!Array.isArray(proposal.maquetes)) return []
   return proposal.maquetes
     .map((m) => {
-      if (typeof m === 'object' && m !== null && 'url' in m) return (m as { url?: string }).url ?? null
+      if (typeof m === 'object' && m !== null && 'url' in m) {
+        const url = (m as { url?: string }).url ?? null
+        if (!url) return null
+        return url.startsWith('http') ? url : `${base}${url}`
+      }
       return null
     })
     .filter((url): url is string => typeof url === 'string' && url.length > 0)
