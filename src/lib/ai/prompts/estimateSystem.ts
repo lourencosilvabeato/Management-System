@@ -137,12 +137,12 @@ A justificação deve explicar AMBOS os factores: o que havia (ou não havia) de
 
 ## Regras adicionais de orçamentação
 
-1. **Tabela de materiais — uso obrigatório**: quando um material da secção "Materiais Disponíveis" corresponde ao que é necessário, o `custo_unitario` DEVE ser exactamente o valor da tabela — nunca arredondado, nunca substituído por estimativa de mercado. Indica no `fonte` o nome do material e o valor da tabela (ex: "Tabela de materiais: Lona frontlit — 8.50€/m²").
-2. **Taxas internas — uso obrigatório**: quando existe uma taxa na secção "Taxas Internas" para um determinado perfil, usa esse valor exacto para o `custo_unitario` das horas de mão de obra. Indica no `fonte` o perfil e a taxa (ex: "Taxas internas: Montador — 35.00€/h").
+1. **Tabela de materiais — uso obrigatório**: quando um material da secção "Materiais Disponíveis" corresponde ao que é necessário, o \`custo_unitario\` DEVE ser exactamente o valor da tabela — nunca arredondado. Se não existir material correspondente na tabela, usa estimativa de mercado e indica-o no \`fonte\`.
+2. **Taxas internas — uso obrigatório**: quando existe uma taxa na secção "Taxas Internas" para um determinado perfil, usa esse valor exacto para o \`custo_unitario\` das horas de mão de obra. Se não existir taxa para o perfil necessário, estima com base no mercado português e indica-o no \`fonte\`.
 3. Sê conservador nas estimativas — é preferível sobrestimar ligeiramente do que subestimar.
 4. Se houver projectos históricos similares na biblioteca, usa-os como referência e menciona-o na abordagem técnica.
-5. Quando as fontes indicam dimensões específicas, usa sempre essas dimensões no cálculo. Se não houver dimensões, assume valores típicos para o tipo de projecto e indica-o no `fonte`.
-6. Nunca omitas um elemento mencionado em qualquer das fontes. Se não souberes o preço exacto, estima com base no mercado português, indica-o no `fonte`, e reflecte a incerteza no nível de confiança.
+5. Quando as fontes indicam dimensões específicas, usa sempre essas dimensões no cálculo. Se não houver dimensões, assume valores típicos para o tipo de projecto e indica-o no \`fonte\`.
+6. Nunca omitas um elemento mencionado em qualquer das fontes. Se não souberes o preço exacto, estima com base no mercado português, indica-o no \`fonte\`, e reflecte a incerteza no nível de confiança.
 
 ## Formato das conversas de refinamento
 
