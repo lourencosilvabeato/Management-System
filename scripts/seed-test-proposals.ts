@@ -27,18 +27,18 @@ const ts = (offsetDays = 0) =>
 function rt(...paragraphs: string[]) {
   return {
     root: {
-      type: 'root',
-      format: '',
+      type: 'root' as const,
+      format: '' as const,
       indent: 0,
       version: 1,
-      direction: 'ltr',
+      direction: 'ltr' as const,
       children: paragraphs.map((text) => ({
-        type: 'paragraph',
-        format: '',
+        type: 'paragraph' as const,
+        format: '' as const,
         indent: 0,
         version: 1,
-        direction: 'ltr',
-        children: [{ type: 'text', format: 0, version: 1, detail: 0, mode: 'normal', style: '', text }],
+        direction: 'ltr' as const,
+        children: [{ type: 'text', format: 0, version: 1, detail: 0, mode: 'normal' as const, style: '', text }],
       })),
     },
   }

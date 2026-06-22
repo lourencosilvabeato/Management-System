@@ -244,8 +244,17 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
         resultCount={filtered.length}
       />
 
-      <div className="overflow-hidden" style={{ border: '1px solid #eeeeee', borderRadius: 2 }}>
-        <Table>
+      <div style={{ border: '1px solid #eeeeee', borderRadius: 2, overflowX: 'auto' }}>
+        <Table style={{ tableLayout: 'fixed', width: '100%', minWidth: 700 }}>
+          <colgroup>
+            <col style={{ width: '11%' }} />
+            <col style={{ width: '26%' }} />
+            <col style={{ width: '17%' }} />
+            <col style={{ width: '13%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '10%' }} />
+            <col style={{ width: '13%' }} />
+          </colgroup>
           <TableHeader>
             <TableRow className="border-border/60">
               {(
@@ -300,14 +309,14 @@ export function ProposalTable({ currentUser, accountUsers }: Props) {
                   className="cursor-pointer transition-colors hover:bg-foreground/[0.04] border-border/50"
                   onClick={() => setSelectedId(String(p.id))}
                 >
-                  <TableCell className="text-xs text-[#999999]" style={{ fontFamily: "'JetBrains Mono', monospace" }}>
+                  <TableCell className="text-xs text-[#999999]" style={{ fontFamily: "'JetBrains Mono', monospace", whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                     {p.numero ?? '—'}
                   </TableCell>
-                  <TableCell className="font-semibold">{p.nomeProjeto}</TableCell>
-                  <TableCell>{p.cliente}</TableCell>
-                  <TableCell>{getAccountName(p)}</TableCell>
-                  <TableCell className="text-sm">{formatDate(p.createdAt)}</TableCell>
-                  <TableCell className="text-right font-mono text-sm">
+                  <TableCell className="font-semibold" style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem' }}>{p.nomeProjeto}</TableCell>
+                  <TableCell style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem' }}>{p.cliente}</TableCell>
+                  <TableCell style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', fontSize: '0.9rem' }}>{getAccountName(p)}</TableCell>
+                  <TableCell style={{ fontSize: '0.875rem', whiteSpace: 'nowrap' }}>{formatDate(p.createdAt)}</TableCell>
+                  <TableCell className="text-right font-mono" style={{ fontSize: '0.875rem', whiteSpace: 'nowrap' }}>
                     {typeof p.valorVendaFinal === 'number'
                       ? `${p.valorVendaFinal.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}€`
                       : '—'}

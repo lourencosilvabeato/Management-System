@@ -12,10 +12,10 @@ export function ProposalKPIs({ proposals }: Props) {
 
   const active = proposals.filter((p) => !['Ganha', 'Perdida'].includes(p.estado ?? ''))
 
-  const pipeline = active.reduce(
-    (s, p) => s + (typeof p.valorVendaFinal === 'number' ? p.valorVendaFinal : 0),
-    0,
-  )
+  // Pipeline includes active proposals + Ganha (confirmed revenue); excludes Perdida
+  const pipeline = proposals
+    .filter((p) => p.estado !== 'Perdida')
+    .reduce((s, p) => s + (typeof p.valorVendaFinal === 'number' ? p.valorVendaFinal : 0), 0)
 
   const wonMonth = proposals.filter(
     (p) => p.estado === 'Ganha' && p.updatedAt >= startOfMonth,
