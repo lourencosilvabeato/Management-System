@@ -326,70 +326,77 @@ export function EstimateEditor({
                 <span className="col-span-1" />
               </div>
               {item.rubricas.map((r, rubIdx) => (
-                <div key={rubIdx} className="grid grid-cols-12 gap-2 items-center">
-                  {readOnly ? (
-                    <span className="col-span-4 text-xs truncate">{r.descricao}</span>
-                  ) : (
-                    <Input
-                      className="col-span-4 h-7 text-xs"
-                      value={r.descricao}
-                      onChange={(e) => updateRubrica(itemIdx, rubIdx, 'descricao', e.target.value)}
-                    />
-                  )}
-                  {readOnly ? (
-                    <span className="col-span-2 text-xs">{r.quantidade}</span>
-                  ) : (
-                    <Input
-                      className="col-span-2 h-7 text-xs"
-                      type="number"
-                      min={0}
-                      value={r.quantidade}
-                      onChange={(e) =>
-                        updateRubrica(itemIdx, rubIdx, 'quantidade', parseFloat(e.target.value) || 0)
-                      }
-                    />
-                  )}
-                  {readOnly ? (
-                    <span className="col-span-2 text-xs">{r.unidade}</span>
-                  ) : (
-                    <Input
-                      className="col-span-2 h-7 text-xs"
-                      value={r.unidade}
-                      onChange={(e) => updateRubrica(itemIdx, rubIdx, 'unidade', e.target.value)}
-                    />
-                  )}
-                  {readOnly ? (
-                    <span className="col-span-2 text-xs text-right">{r.custo_unitario.toFixed(2)}</span>
-                  ) : (
-                    <Input
-                      className="col-span-2 h-7 text-xs text-right"
-                      type="number"
-                      min={0}
-                      step={0.01}
-                      value={r.custo_unitario}
-                      onChange={(e) =>
-                        updateRubrica(
-                          itemIdx,
-                          rubIdx,
-                          'custo_unitario',
-                          parseFloat(e.target.value) || 0,
-                        )
-                      }
-                    />
-                  )}
-                  <span className="col-span-1 text-right text-xs font-mono">
-                    {r.custo_total.toFixed(0)}€
-                  </span>
-                  {readOnly ? (
-                    <span className="col-span-1" />
-                  ) : (
-                    <button
-                      className="col-span-1 text-muted-foreground hover:text-destructive text-xs"
-                      onClick={() => setConfirmRemove({ itemIdx, rubIdx })}
-                      title="Remover rubrica"
-                    >
-                      ✕
-                    </button>
+                <div key={rubIdx} className="space-y-0.5">
+                  <div className="grid grid-cols-12 gap-2 items-center">
+                    {readOnly ? (
+                      <span className="col-span-4 text-xs truncate">{r.descricao}</span>
+                    ) : (
+                      <Input
+                        className="col-span-4 h-7 text-xs"
+                        value={r.descricao}
+                        onChange={(e) => updateRubrica(itemIdx, rubIdx, 'descricao', e.target.value)}
+                      />
+                    )}
+                    {readOnly ? (
+                      <span className="col-span-2 text-xs">{r.quantidade}</span>
+                    ) : (
+                      <Input
+                        className="col-span-2 h-7 text-xs"
+                        type="number"
+                        min={0}
+                        value={r.quantidade}
+                        onChange={(e) =>
+                          updateRubrica(itemIdx, rubIdx, 'quantidade', parseFloat(e.target.value) || 0)
+                        }
+                      />
+                    )}
+                    {readOnly ? (
+                      <span className="col-span-2 text-xs">{r.unidade}</span>
+                    ) : (
+                      <Input
+                        className="col-span-2 h-7 text-xs"
+                        value={r.unidade}
+                        onChange={(e) => updateRubrica(itemIdx, rubIdx, 'unidade', e.target.value)}
+                      />
+                    )}
+                    {readOnly ? (
+                      <span className="col-span-2 text-xs text-right">{r.custo_unitario.toFixed(2)}</span>
+                    ) : (
+                      <Input
+                        className="col-span-2 h-7 text-xs text-right"
+                        type="number"
+                        min={0}
+                        step={0.01}
+                        value={r.custo_unitario}
+                        onChange={(e) =>
+                          updateRubrica(
+                            itemIdx,
+                            rubIdx,
+                            'custo_unitario',
+                            parseFloat(e.target.value) || 0,
+                          )
+                        }
+                      />
+                    )}
+                    <span className="col-span-1 text-right text-xs font-mono">
+                      {r.custo_total.toFixed(0)}€
+                    </span>
+                    {readOnly ? (
+                      <span className="col-span-1" />
+                    ) : (
+                      <button
+                        className="col-span-1 text-muted-foreground hover:text-destructive text-xs"
+                        onClick={() => setConfirmRemove({ itemIdx, rubIdx })}
+                        title="Remover rubrica"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
+                  {r.fonte && (
+                    <p className="text-[10px] text-muted-foreground/70 italic pl-1 leading-tight">
+                      {r.fonte}
+                    </p>
                   )}
                 </div>
               ))}

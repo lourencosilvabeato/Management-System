@@ -10,7 +10,7 @@ export async function generateEstimate(
     {
       model: 'gpt-4o-mini',
       max_tokens: 4096,
-      temperature: 0,
+      temperature: 0.1,
       messages: [
         { role: 'system', content: ESTIMATE_SYSTEM_PROMPT },
         ...messages,

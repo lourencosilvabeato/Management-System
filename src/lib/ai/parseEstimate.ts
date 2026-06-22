@@ -4,6 +4,7 @@ export interface EstimateRubrica {
   unidade: string
   custo_unitario: number
   custo_total: number
+  fonte?: string
 }
 
 export interface EstimateItem {
