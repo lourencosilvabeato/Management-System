@@ -17,7 +17,7 @@ const LOADING_MESSAGES = [
   'A finalizar orçamento...',
 ]
 
-const MAX_POLL_COUNT = 90
+const MAX_POLL_COUNT = 150
 
 interface ConversaMsg {
   role: 'user' | 'assistant'
