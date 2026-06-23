@@ -261,6 +261,7 @@ export const Proposals: CollectionConfig = {
             { name: 'abordagemTecnica', type: 'textarea' },
             {
               name: 'nivelConfianca',
+              dbName: 'nvl_conf',
               type: 'select',
               options: [
                 { label: 'Alto', value: 'Alto' },
