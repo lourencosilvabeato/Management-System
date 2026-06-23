@@ -6,6 +6,15 @@ import { generateEstimate } from './claudeClient'
 import { parseEstimate } from './parseEstimate'
 import { describeAttachments } from './readAttachments'
 import { analyzeFigmaLink } from '../figma'
+import { buildSystemPrompt, ESTIMATE_DEFAULT_RULES } from './prompts/estimateSystem'
+
+export interface EstimateVariante {
+  tipo: 'Otimista' | 'Equilibrada' | 'Conservadora'
+  estimativa: Record<string, unknown>
+  abordagemTecnica: string
+  nivelConfianca: 'Alto' | 'Medio' | 'Baixo'
+  nivelConfiancaJustificacao: string
+}
 
 export interface EstimateResult {
   conversaIA: Array<{ role: 'user' | 'assistant'; content: string; timestamp: string }>
@@ -14,6 +23,8 @@ export interface EstimateResult {
   nivelConfianca: 'Alto' | 'Medio' | 'Baixo'
   nivelConfiancaJustificacao: string
   inputsUsados: Record<string, unknown>
+  variantesGeradas: EstimateVariante[]
+  varianteSelecionada: 'Otimista' | 'Equilibrada' | 'Conservadora'
 }
 
 interface KnowledgeBase {
@@ -39,6 +50,15 @@ async function fetchKnowledgeBase(payload: BasePayload): Promise<KnowledgeBase> 
   }
 }
 
+async function fetchAiSettings(payload: BasePayload): Promise<string> {
+  try {
+    const settings = await payload.findGlobal({ slug: 'ai-settings', overrideAccess: true })
+    return (settings as { regrasOrcamentacao?: string | null }).regrasOrcamentacao || ESTIMATE_DEFAULT_RULES
+  } catch {
+    return ESTIMATE_DEFAULT_RULES
+  }
+}
+
 function getMockupUrls(proposal: Proposal): string[] {
   const base = (process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000').replace(/\/$/, '')
   if (!Array.isArray(proposal.maquetes)) return []
@@ -60,16 +80,27 @@ function normalizeConfianca(nivel: string): 'Alto' | 'Medio' | 'Baixo' {
   return 'Medio'
 }
 
+const VARIANT_INSTRUCTIONS: Record<'Otimista' | 'Equilibrada' | 'Conservadora', string> = {
+  Otimista:
+    '\n\n## Instrução de variante\nEsta é a variante **OTIMISTA**. Assume condições de execução ideais: utiliza as quantidades mínimas adequadas ao projecto, tempos de trabalho na estimativa baixa, sem contingências adicionais. Apresenta o custo mínimo realista.',
+  Equilibrada:
+    '\n\n## Instrução de variante\nEsta é a variante **EQUILIBRADA**. Usa estimativas standard sem optimismo nem pessimismo — a tua estimativa base normal.',
+  Conservadora:
+    '\n\n## Instrução de variante\nEsta é a variante **CONSERVADORA**. Inclui uma margem de contingência de 10-15% nas quantidades e tempos de trabalho para cobrir imprevistos. Assume condições de execução mais exigentes do que o habitual.',
+}
+
 async function callAI(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  systemPrompt: string,
 ): Promise<string> {
-  return generateEstimate(messages)
+  return generateEstimate(messages, systemPrompt)
 }
 
 async function callAIWithRetry(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
+  systemPrompt: string,
 ): Promise<ReturnType<typeof parseEstimate>> {
-  const raw = await callAI(messages)
+  const raw = await callAI(messages, systemPrompt)
   try {
     return parseEstimate(raw)
   } catch {
@@ -84,7 +115,7 @@ async function callAIWithRetry(
           'Reply with ONLY valid JSON matching the exact schema — no text, no markdown, no backticks.',
       },
     ]
-    const retryRaw = await callAI(retryMessages)
+    const retryRaw = await callAI(retryMessages, systemPrompt)
     return parseEstimate(retryRaw)
   }
 }
@@ -93,7 +124,12 @@ export async function generateInitialEstimate(
   proposal: Proposal,
   payload: BasePayload,
 ): Promise<EstimateResult> {
-  const knowledgeBase = await fetchKnowledgeBase(payload)
+  const [knowledgeBase, customRules] = await Promise.all([
+    fetchKnowledgeBase(payload),
+    fetchAiSettings(payload),
+  ])
+
+  const systemPrompt = buildSystemPrompt(customRules)
 
   const mockupUrls = getMockupUrls(proposal)
   const [imageDescription, attachmentContent, figmaAnalysis] = await Promise.all([
@@ -102,32 +138,66 @@ export async function generateInitialEstimate(
     proposal.figmaLink ? analyzeFigmaLink(proposal.figmaLink) : Promise.resolve({ imageDescription: '', textAnnotations: '' }),
   ])
 
-  const userMessage = buildInitialPrompt(proposal, knowledgeBase, imageDescription, {
+  const baseUserMessage = buildInitialPrompt(proposal, knowledgeBase, imageDescription, {
     attachmentText: attachmentContent.textContent,
     attachmentImageDescription: attachmentContent.imageDescription,
     figmaImageDescription: figmaAnalysis.imageDescription,
     figmaTextAnnotations: figmaAnalysis.textAnnotations,
   })
-  const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-    { role: 'user', content: userMessage },
+
+  // Run all 3 variants in parallel
+  const variantTypes: Array<'Otimista' | 'Equilibrada' | 'Conservadora'> = [
+    'Otimista',
+    'Equilibrada',
+    'Conservadora',
   ]
 
-  const parsed = await callAIWithRetry(messages)
+  const variantResults = await Promise.allSettled(
+    variantTypes.map(async (tipo) => {
+      const variantMessage = baseUserMessage + VARIANT_INSTRUCTIONS[tipo]
+      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
+        { role: 'user', content: variantMessage },
+      ]
+      const parsed = await callAIWithRetry(messages, systemPrompt)
+      const variante: EstimateVariante = {
+        tipo,
+        estimativa: parsed.estimativa as unknown as Record<string, unknown>,
+        abordagemTecnica: parsed.abordagem_tecnica,
+        nivelConfianca: normalizeConfianca(parsed.nivel_confianca.nivel),
+        nivelConfiancaJustificacao: parsed.nivel_confianca.justificacao,
+      }
+      return variante
+    }),
+  )
+
+  const variantesGeradas: EstimateVariante[] = variantResults
+    .map((r) => (r.status === 'fulfilled' ? r.value : null))
+    .filter((v): v is EstimateVariante => v !== null)
+
+  // Use Equilibrada as the default selected variant; fall back to whichever succeeded
+  const equilibrada =
+    variantesGeradas.find((v) => v.tipo === 'Equilibrada') ?? variantesGeradas[0]
+
+  if (!equilibrada) {
+    throw new Error('All estimate variants failed to generate')
+  }
 
   const now = new Date().toISOString()
 
   return {
     conversaIA: [],
-    estimativaAtual: parsed.estimativa as unknown as Record<string, unknown>,
-    abordagemTecnica: parsed.abordagem_tecnica,
-    nivelConfianca: normalizeConfianca(parsed.nivel_confianca.nivel),
-    nivelConfiancaJustificacao: parsed.nivel_confianca.justificacao,
+    estimativaAtual: equilibrada.estimativa,
+    abordagemTecnica: equilibrada.abordagemTecnica,
+    nivelConfianca: equilibrada.nivelConfianca,
+    nivelConfiancaJustificacao: equilibrada.nivelConfiancaJustificacao,
     inputsUsados: {
       briefingSnapshot: proposal.briefing,
       memoriacriativaSnapshot: proposal.memoriacriativa,
       maquetesIds: mockupUrls,
       timestamp: now,
     },
+    variantesGeradas,
+    varianteSelecionada: 'Equilibrada',
   }
 }
 
@@ -141,8 +211,14 @@ export async function continueConversation(
   const sessao = sessoes.find((s) => s.sessaoId === sessaoId)
   if (!sessao) throw new Error(`Session not found: ${sessaoId}`)
 
+  const [knowledgeBase, customRules] = await Promise.all([
+    fetchKnowledgeBase(payload),
+    fetchAiSettings(payload),
+  ])
+
+  const systemPrompt = buildSystemPrompt(customRules)
+
   // Rebuild initial prompt so the AI has full context on follow-up calls
-  const knowledgeBase = await fetchKnowledgeBase(payload)
   const mockupUrls = getMockupUrls(proposal)
   const [imageDescription, attachmentContent, figmaAnalysis] = await Promise.all([
     mockupUrls.length > 0 ? analyzeImages(mockupUrls) : Promise.resolve(''),
@@ -185,7 +261,7 @@ export async function continueConversation(
     { role: 'user', content: newMessage },
   ]
 
-  const parsed = await callAIWithRetry(messages)
+  const parsed = await callAIWithRetry(messages, systemPrompt)
 
   const now = new Date().toISOString()
 
@@ -200,6 +276,12 @@ export async function continueConversation(
     { role: 'assistant', content: JSON.stringify(parsed), timestamp: now },
   ]
 
+  // Preserve existing variants from the session (chat does not regenerate variants)
+  const existingVariantes = ((sessao as Record<string, unknown>).variantesGeradas ?? []) as EstimateVariante[]
+  const existingVarianteSelecionada =
+    ((sessao as Record<string, unknown>).varianteSelecionada as 'Otimista' | 'Equilibrada' | 'Conservadora' | undefined) ??
+    'Equilibrada'
+
   return {
     conversaIA: updatedConversaIA,
     estimativaAtual: parsed.estimativa as unknown as Record<string, unknown>,
@@ -207,5 +289,7 @@ export async function continueConversation(
     nivelConfianca: normalizeConfianca(parsed.nivel_confianca.nivel),
     nivelConfiancaJustificacao: parsed.nivel_confianca.justificacao,
     inputsUsados: (sessao.inputsUsados as Record<string, unknown>) ?? {},
+    variantesGeradas: existingVariantes,
+    varianteSelecionada: existingVarianteSelecionada,
   }
 }

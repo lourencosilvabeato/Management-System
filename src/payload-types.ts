@@ -97,8 +97,12 @@ export interface Config {
     defaultIDType: number;
   };
   fallbackLocale: null;
-  globals: {};
-  globalsSelect: {};
+  globals: {
+    'ai-settings': AiSetting;
+  };
+  globalsSelect: {
+    'ai-settings': AiSettingsSelect<false> | AiSettingsSelect<true>;
+  };
   locale: null;
   widgets: {
     collections: CollectionsWidget;
@@ -258,6 +262,25 @@ export interface Proposal {
         abordagemTecnica?: string | null;
         nivelConfianca?: ('Alto' | 'Medio' | 'Baixo') | null;
         nivelConfiancaJustificacao?: string | null;
+        variantesGeradas?:
+          | {
+              tipo?: ('Otimista' | 'Equilibrada' | 'Conservadora') | null;
+              estimativa?:
+                | {
+                    [k: string]: unknown;
+                  }
+                | unknown[]
+                | string
+                | number
+                | boolean
+                | null;
+              abordagemTecnica?: string | null;
+              nivelConfianca?: ('Alto' | 'Medio' | 'Baixo') | null;
+              nivelConfiancaJustificacao?: string | null;
+              id?: string | null;
+            }[]
+          | null;
+        varianteSelecionada?: ('Otimista' | 'Equilibrada' | 'Conservadora') | null;
         inputsUsados?:
           | {
               [k: string]: unknown;
@@ -563,6 +586,17 @@ export interface ProposalsSelect<T extends boolean = true> {
         abordagemTecnica?: T;
         nivelConfianca?: T;
         nivelConfiancaJustificacao?: T;
+        variantesGeradas?:
+          | T
+          | {
+              tipo?: T;
+              estimativa?: T;
+              abordagemTecnica?: T;
+              nivelConfianca?: T;
+              nivelConfiancaJustificacao?: T;
+              id?: T;
+            };
+        varianteSelecionada?: T;
         inputsUsados?: T;
         id?: T;
       };
@@ -680,6 +714,31 @@ export interface PayloadMigrationsSelect<T extends boolean = true> {
   batch?: T;
   updatedAt?: T;
   createdAt?: T;
+}
+/**
+ * Regras operacionais que a IA segue ao gerar estimativas de orçamentação. Alterações entram em vigor na próxima geração.
+ *
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ai-settings".
+ */
+export interface AiSetting {
+  id: number;
+  /**
+   * Define as regras de produção, pressupostos e directrizes que a IA deve seguir. Inclui a cadeia de produção, erros comuns a evitar e regras de utilização da base de conhecimento.
+   */
+  regrasOrcamentacao?: string | null;
+  updatedAt?: string | null;
+  createdAt?: string | null;
+}
+/**
+ * This interface was referenced by `Config`'s JSON-Schema
+ * via the `definition` "ai-settings_select".
+ */
+export interface AiSettingsSelect<T extends boolean = true> {
+  regrasOrcamentacao?: T;
+  updatedAt?: T;
+  createdAt?: T;
+  globalType?: T;
 }
 /**
  * This interface was referenced by `Config`'s JSON-Schema

@@ -77,6 +77,7 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
   // Number of sessions when generation was triggered — used to detect when a NEW session arrives
   const [sessionsAtTrigger, setSessionsAtTrigger] = useState<number | null>(null)
   const [triggering, setTriggering] = useState(false)
+  const [selectingVariante, setSelectingVariante] = useState(false)
 
   const onRefreshRef = useRef(onRefresh)
   useEffect(() => {
@@ -185,6 +186,33 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     }
   }
 
+  const handleSelectVariante = async (tipo: 'Otimista' | 'Equilibrada' | 'Conservadora') => {
+    setSelectingVariante(true)
+    try {
+      const res = await fetch(`/api/proposals/${proposal.id}/select-variant`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ tipo }),
+      })
+      if (!res.ok) return
+      const data = await res.json() as {
+        estimativaAtual: unknown
+        abordagemTecnica: string
+        nivelConfianca: string
+        nivelConfiancaJustificacao: string
+        varianteSelecionada: string
+      }
+      const est = data.estimativaAtual as EstimateOutput['estimativa']
+      if (est?.items) setCurrentEstimativa(est)
+      setAbordagem(data.abordagemTecnica)
+      setNivelConfianca(data.nivelConfianca)
+      setNivelJustificacao(data.nivelConfiancaJustificacao)
+      onRefreshRef.current()
+    } finally {
+      setSelectingVariante(false)
+    }
+  }
+
   const handleRegenerate = async () => {
     setCurrentEstimativa(null)
     setGenerationError(false)
@@ -287,9 +315,22 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     )
   }
 
+  // Variantes from the active session
+  const variantesGeradas = (activeSessao?.variantesGeradas ?? []) as VarianteData[]
+  const varianteSelecionada = (activeSessao?.varianteSelecionada ?? 'Equilibrada') as VarianteTipo
+
   // State: estimate available
   return (
     <div className="space-y-6 py-4">
+      {variantesGeradas.length > 0 && (
+        <VariantePicker
+          variantes={variantesGeradas}
+          selecionada={varianteSelecionada}
+          onSelect={(tipo) => void handleSelectVariante(tipo)}
+          disabled={selectingVariante || isReadOnly}
+        />
+      )}
+
       {currentEstimativa && (
         <EstimateEditor
           estimativa={currentEstimativa}
@@ -355,6 +396,102 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     </div>
   )
 }
+
+// ── Variant picker ────────────────────────────────────────────────────────────
+
+type VarianteTipo = 'Otimista' | 'Equilibrada' | 'Conservadora'
+
+interface VarianteData {
+  tipo?: VarianteTipo | null
+  estimativa?: unknown
+  nivelConfianca?: string | null
+}
+
+const VARIANTE_LABELS: Record<VarianteTipo, string> = {
+  Otimista: 'Otimista',
+  Equilibrada: 'Equilibrada',
+  Conservadora: 'Conservadora',
+}
+
+const VARIANTE_DESCRIPTIONS: Record<VarianteTipo, string> = {
+  Otimista: 'Condições ideais, quantidades mínimas',
+  Equilibrada: 'Estimativa standard equilibrada',
+  Conservadora: 'Com margem de contingência',
+}
+
+const CONFIANCA_COLORS: Record<string, string> = {
+  Alto: 'text-emerald-600',
+  Medio: 'text-amber-600',
+  Baixo: 'text-rose-600',
+}
+
+function VariantePicker({
+  variantes,
+  selecionada,
+  onSelect,
+  disabled,
+}: {
+  variantes: VarianteData[]
+  selecionada: VarianteTipo
+  onSelect: (tipo: VarianteTipo) => void
+  disabled: boolean
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+        Variantes geradas — selecciona uma para trabalhar
+      </p>
+      <div className="grid grid-cols-3 gap-3">
+        {(['Otimista', 'Equilibrada', 'Conservadora'] as VarianteTipo[]).map((tipo) => {
+          const v = variantes.find((x) => x.tipo === tipo)
+          const isSelected = selecionada === tipo
+          const total = getVarianteTotal(v?.estimativa)
+          return (
+            <button
+              key={tipo}
+              onClick={() => !isSelected && onSelect(tipo)}
+              disabled={disabled || isSelected}
+              className={`rounded-md border p-3 text-left transition-all space-y-1 ${
+                isSelected
+                  ? 'border-black bg-black text-white'
+                  : 'border-border hover:border-foreground/40 bg-background'
+              }`}
+            >
+              <div className={`text-xs font-semibold uppercase tracking-wide ${isSelected ? 'text-white' : ''}`}>
+                {VARIANTE_LABELS[tipo]}
+              </div>
+              <div className={`text-xs ${isSelected ? 'text-white/70' : 'text-muted-foreground'}`}>
+                {VARIANTE_DESCRIPTIONS[tipo]}
+              </div>
+              {total !== null && (
+                <div className={`text-sm font-bold font-mono mt-1 ${isSelected ? 'text-white' : ''}`}>
+                  {total.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}€
+                </div>
+              )}
+              {v?.nivelConfianca && (
+                <div className={`text-[10px] ${isSelected ? 'text-white/60' : (CONFIANCA_COLORS[v.nivelConfianca] ?? 'text-muted-foreground')}`}>
+                  Confiança: {v.nivelConfianca}
+                </div>
+              )}
+              {isSelected && (
+                <div className="text-[10px] text-white/80 font-medium">✓ Seleccionada</div>
+              )}
+            </button>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+function getVarianteTotal(estimativa: unknown): number | null {
+  if (!estimativa || typeof estimativa !== 'object') return null
+  const est = estimativa as Record<string, unknown>
+  if (typeof est.total_geral === 'number') return est.total_geral
+  return null
+}
+
+// ── Previous sessions ─────────────────────────────────────────────────────────
 
 function PreviousSession({
   sessao,

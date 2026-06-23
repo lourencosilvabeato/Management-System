@@ -243,6 +243,46 @@ export const Proposals: CollectionConfig = {
           type: 'textarea',
         },
         {
+          name: 'variantesGeradas',
+          label: 'Variantes Geradas',
+          type: 'array',
+          admin: { readOnly: true },
+          fields: [
+            {
+              name: 'tipo',
+              type: 'select',
+              options: [
+                { label: 'Otimista', value: 'Otimista' },
+                { label: 'Equilibrada', value: 'Equilibrada' },
+                { label: 'Conservadora', value: 'Conservadora' },
+              ],
+            },
+            { name: 'estimativa', type: 'json' },
+            { name: 'abordagemTecnica', type: 'textarea' },
+            {
+              name: 'nivelConfianca',
+              type: 'select',
+              options: [
+                { label: 'Alto', value: 'Alto' },
+                { label: 'Médio', value: 'Medio' },
+                { label: 'Baixo', value: 'Baixo' },
+              ],
+            },
+            { name: 'nivelConfiancaJustificacao', type: 'textarea' },
+          ],
+        },
+        {
+          name: 'varianteSelecionada',
+          label: 'Variante Seleccionada',
+          type: 'select',
+          options: [
+            { label: 'Otimista', value: 'Otimista' },
+            { label: 'Equilibrada', value: 'Equilibrada' },
+            { label: 'Conservadora', value: 'Conservadora' },
+          ],
+          admin: { readOnly: true },
+        },
+        {
           name: 'inputsUsados',
           label: 'Inputs Usados (snapshot)',
           type: 'json',

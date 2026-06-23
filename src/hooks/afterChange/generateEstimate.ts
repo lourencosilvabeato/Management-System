@@ -53,6 +53,8 @@ export const generateEstimate: CollectionAfterChangeHook<Proposal> = async ({
               nivelConfianca: result.nivelConfianca,
               nivelConfiancaJustificacao: result.nivelConfiancaJustificacao,
               inputsUsados: result.inputsUsados,
+              variantesGeradas: result.variantesGeradas,
+              varianteSelecionada: result.varianteSelecionada,
             },
           ],
           activityLog: [

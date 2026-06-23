@@ -13,6 +13,7 @@ import { Materials } from './collections/Materials'
 import { Machines } from './collections/Machines'
 import { InternalRates } from './collections/InternalRates'
 import { ProjectLibrary } from './collections/ProjectLibrary'
+import { AiSettings } from './globals/AiSettings'
 
 const filename = fileURLToPath(import.meta.url)
 const dirname = path.dirname(filename)
@@ -27,6 +28,7 @@ export default buildConfig({
     },
   },
   collections: [Users, Media, Proposals, Materials, Machines, InternalRates, ProjectLibrary],
+  globals: [AiSettings],
   editor: lexicalEditor(),
   secret: process.env.PAYLOAD_SECRET || '',
   typescript: {
