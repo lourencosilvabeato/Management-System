@@ -78,7 +78,7 @@ export async function POST(
     })
 
     const logEntry = {
-      evento: `Budgeting follow-up: ${mensagem.slice(0, 50)}${mensagem.length > 50 ? '...' : ''}`,
+      evento: `Ajuste de orçamentação: ${mensagem.slice(0, 50)}${mensagem.length > 50 ? '...' : ''}`,
       user: typeof user.id === 'string' || typeof user.id === 'number' ? user.id : undefined,
       timestamp: new Date().toISOString(),
     }

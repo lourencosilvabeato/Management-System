@@ -60,7 +60,7 @@ export const generateEstimate: CollectionAfterChangeHook<Proposal> = async ({
           activityLog: [
             ...(Array.isArray(doc.activityLog) ? doc.activityLog : []),
             {
-              evento: `AI estimate generated — confidence: ${result.nivelConfianca}`,
+              evento: `Estimativa IA gerada — confiança: ${result.nivelConfianca}`,
               user: req.user?.id,
               timestamp,
             },
@@ -78,7 +78,7 @@ export const generateEstimate: CollectionAfterChangeHook<Proposal> = async ({
           activityLog: [
             ...(Array.isArray(doc.activityLog) ? doc.activityLog : []),
             {
-              evento: `Estimate generation failed: ${message}`,
+              evento: `Erro ao gerar estimativa: ${message}`,
               user: req.user?.id,
               timestamp,
             },

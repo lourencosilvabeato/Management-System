@@ -37,7 +37,7 @@ export const Proposals: CollectionConfig = {
       admin: {
         readOnly: true,
         position: 'sidebar',
-        description: 'Auto-generated: PROP-YYYY-NNN',
+        description: 'Gerado automaticamente: PROP-YYYY-NNN',
       },
       access: {
         create: neverWrite,
@@ -130,7 +130,7 @@ export const Proposals: CollectionConfig = {
     {
       name: 'figmaLink',
       type: 'text',
-      admin: { description: 'URL to Figma file — passed as text to the AI prompt' },
+      admin: { description: 'URL do ficheiro Figma — enviado como texto para o prompt da IA' },
       access: {
         create: creativeZoneWrite,
         update: creativeZoneWrite,
@@ -187,7 +187,7 @@ export const Proposals: CollectionConfig = {
         create: budgetingZoneWrite,
         update: budgetingZoneWrite,
       },
-      admin: { readOnly: true, description: 'Managed automatically by the AI engine' },
+      admin: { readOnly: true, description: 'Gerido automaticamente pelo motor de IA' },
       fields: [
         {
           name: 'sessaoId',
@@ -203,8 +203,8 @@ export const Proposals: CollectionConfig = {
               name: 'role',
               type: 'select',
               options: [
-                { label: 'User', value: 'user' },
-                { label: 'Assistant', value: 'assistant' },
+                { label: 'Utilizador', value: 'user' },
+                { label: 'Assistente', value: 'assistant' },
               ],
             },
             {
@@ -368,7 +368,7 @@ export const Proposals: CollectionConfig = {
       name: 'activityLog',
       label: 'Log de Actividade',
       type: 'array',
-      admin: { readOnly: true, description: 'Append-only — written by hooks only' },
+      admin: { readOnly: true, description: 'Apenas leitura — escrito automaticamente pelos hooks' },
       access: {
         create: neverWrite,
         update: neverWrite,

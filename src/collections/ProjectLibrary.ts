@@ -37,7 +37,7 @@ export const ProjectLibrary: CollectionConfig = {
       name: 'estruturaCustos',
       label: 'Estrutura de Custos',
       type: 'json',
-      admin: { description: 'JSON with items and rubricas — used as AI benchmarking reference' },
+      admin: { description: 'JSON com items e rubricas — utilizado como referência de benchmarking pela IA' },
     },
     {
       name: 'notas',

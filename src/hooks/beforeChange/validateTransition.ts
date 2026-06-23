@@ -53,7 +53,7 @@ export const validateTransition: CollectionBeforeChangeHook = async ({
     throw new ValidationError({
       errors: [
         {
-          message: 'This proposal is in a terminal state and cannot be changed.',
+          message: 'Esta proposta está num estado terminal e não pode ser alterada.',
           path: 'estado',
         },
       ],
@@ -66,7 +66,7 @@ export const validateTransition: CollectionBeforeChangeHook = async ({
     throw new ValidationError({
       errors: [
         {
-          message: `Transition from "${previousEstado}" to "${newEstado}" is not allowed.`,
+          message: `Transição de "${previousEstado}" para "${newEstado}" não é permitida.`,
           path: 'estado',
         },
       ],
@@ -78,7 +78,7 @@ export const validateTransition: CollectionBeforeChangeHook = async ({
     throw new ValidationError({
       errors: [
         {
-          message: `Your role (${userRole}) is not authorised to make this transition.`,
+          message: `O teu perfil (${userRole}) não tem permissão para esta transição.`,
           path: 'estado',
         },
       ],
@@ -92,7 +92,7 @@ export const validateTransition: CollectionBeforeChangeHook = async ({
       throw new ValidationError({
         errors: [
           {
-            message: 'A reason is required when marking a proposal as Perdida.',
+            message: 'É necessário indicar o motivo ao marcar a proposta como Perdida.',
             path: 'motivoPerda',
           },
         ],
