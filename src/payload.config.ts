@@ -1,6 +1,7 @@
 import { postgresAdapter } from '@payloadcms/db-postgres'
 import { lexicalEditor } from '@payloadcms/richtext-lexical'
 import { s3Storage } from '@payloadcms/storage-s3'
+import { pt } from '@payloadcms/translations/languages/pt'
 import path from 'path'
 import { buildConfig } from 'payload'
 import { fileURLToPath } from 'url'
@@ -21,6 +22,10 @@ const dirname = path.dirname(filename)
 const r2Configured = Boolean(process.env.CLOUDFLARE_R2_BUCKET)
 
 export default buildConfig({
+  i18n: {
+    supportedLanguages: { pt },
+    fallbackLanguage: 'pt',
+  },
   admin: {
     user: Users.slug,
     importMap: {

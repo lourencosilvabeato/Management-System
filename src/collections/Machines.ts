@@ -3,6 +3,7 @@ import { isAdmin, isAuthenticated } from '../lib/access'
 
 export const Machines: CollectionConfig = {
   slug: 'machines',
+  labels: { singular: 'Máquina', plural: 'Máquinas' },
   admin: {
     useAsTitle: 'nome',
     defaultColumns: ['nome', 'tipo', 'disponivel'],

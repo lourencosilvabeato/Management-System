@@ -3,6 +3,7 @@ import { isAdmin, isAuthenticated } from '../lib/access'
 
 export const Materials: CollectionConfig = {
   slug: 'materials',
+  labels: { singular: 'Material', plural: 'Materiais' },
   admin: {
     useAsTitle: 'nome',
     defaultColumns: ['nome', 'referencia', 'unidade', 'custoMedio', 'ativo'],

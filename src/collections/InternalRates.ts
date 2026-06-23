@@ -3,6 +3,7 @@ import { isAdmin, isAuthenticated } from '../lib/access'
 
 export const InternalRates: CollectionConfig = {
   slug: 'internal-rates',
+  labels: { singular: 'Taxa Interna', plural: 'Taxas Internas' },
   admin: {
     useAsTitle: 'perfil',
     defaultColumns: ['perfil', 'departamento', 'custoHora'],

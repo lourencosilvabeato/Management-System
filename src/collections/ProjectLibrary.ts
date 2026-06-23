@@ -3,6 +3,7 @@ import { isAdmin, isAuthenticated } from '../lib/access'
 
 export const ProjectLibrary: CollectionConfig = {
   slug: 'project-library',
+  labels: { singular: 'Projecto de Referência', plural: 'Biblioteca de Projectos' },
   admin: {
     useAsTitle: 'nome',
     defaultColumns: ['nome', 'tipo', 'ano'],

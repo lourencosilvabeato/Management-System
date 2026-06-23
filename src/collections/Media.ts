@@ -3,6 +3,7 @@ import { isAuthenticated, isAdmin } from '../lib/access'
 
 export const Media: CollectionConfig = {
   slug: 'media',
+  labels: { singular: 'Ficheiro', plural: 'Ficheiros' },
   admin: {
     defaultColumns: ['filename', 'alt', 'createdAt'],
   },

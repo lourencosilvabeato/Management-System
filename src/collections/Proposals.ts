@@ -15,6 +15,7 @@ import { generateEstimate } from '../hooks/afterChange/generateEstimate'
 
 export const Proposals: CollectionConfig = {
   slug: 'proposals',
+  labels: { singular: 'Proposta', plural: 'Propostas' },
   hooks: {
     beforeChange: [generateProposalNumber, validateTransition],
     afterChange: [logActivity, generateEstimate],

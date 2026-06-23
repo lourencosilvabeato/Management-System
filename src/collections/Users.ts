@@ -3,6 +3,7 @@ import { isAdmin, isAdminOrSelf, adminOnlyWrite } from '../lib/access'
 
 export const Users: CollectionConfig = {
   slug: 'users',
+  labels: { singular: 'Utilizador', plural: 'Utilizadores' },
   auth: true,
   admin: {
     useAsTitle: 'nome',
