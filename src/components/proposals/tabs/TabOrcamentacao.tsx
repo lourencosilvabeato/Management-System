@@ -17,7 +17,7 @@ const LOADING_MESSAGES = [
   'A finalizar orçamento...',
 ]
 
-const MAX_POLL_COUNT = 50
+const MAX_POLL_COUNT = 90
 
 interface ConversaMsg {
   role: 'user' | 'assistant'
@@ -142,7 +142,7 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     const timeout = setTimeout(() => {
       setPollCount((prev) => prev + 1)
       onRefreshRef.current()
-    }, 4000)
+    }, 2000)
     return () => clearTimeout(timeout)
   }, [isGenerating, pollCount, generationError])
 
@@ -309,7 +309,7 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
           {LOADING_MESSAGES[loadingMsgIdx]}
         </p>
         <p className="text-xs text-muted-foreground">
-          A estimativa pode demorar até 60 segundos.
+          A geração de 3 variantes pode demorar 1 a 2 minutos.
         </p>
       </div>
     )
@@ -487,7 +487,12 @@ function VariantePicker({
 function getVarianteTotal(estimativa: unknown): number | null {
   if (!estimativa || typeof estimativa !== 'object') return null
   const est = estimativa as Record<string, unknown>
-  if (typeof est.total_geral === 'number') return est.total_geral
+  // Sum item totals directly — AI's total_geral can be arithmetically wrong
+  if (Array.isArray(est.items) && est.items.length > 0) {
+    return (est.items as Array<{ total_item?: unknown }>).reduce((sum, item) => {
+      return sum + (typeof item.total_item === 'number' ? item.total_item : 0)
+    }, 0)
+  }
   return null
 }
 
