@@ -170,9 +170,21 @@ export async function generateInitialEstimate(
     }),
   )
 
-  const variantesGeradas: EstimateVariante[] = variantResults
+  const raw: EstimateVariante[] = variantResults
     .map((r) => (r.status === 'fulfilled' ? r.value : null))
     .filter((v): v is EstimateVariante => v !== null)
+
+  // Guarantee ordering: Otimista ≤ Equilibrada ≤ Conservadora regardless of what the AI returned
+  const tipoOrder: Array<'Otimista' | 'Equilibrada' | 'Conservadora'> = ['Otimista', 'Equilibrada', 'Conservadora']
+  const variantesGeradas: EstimateVariante[] = raw.length >= 2
+    ? [...raw]
+        .sort((a, b) => {
+          const tA = (a.estimativa as { total_geral?: number }).total_geral ?? 0
+          const tB = (b.estimativa as { total_geral?: number }).total_geral ?? 0
+          return tA - tB
+        })
+        .map((v, i) => ({ ...v, tipo: tipoOrder[i] ?? v.tipo }))
+    : raw
 
   // Use Equilibrada as the default selected variant; fall back to whichever succeeded
   const equilibrada =
