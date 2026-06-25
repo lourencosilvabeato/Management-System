@@ -26,6 +26,7 @@ export interface EstimateResult {
   variantesGeradas: EstimateVariante[]
   varianteSelecionada: 'Otimista' | 'Equilibrada' | 'Conservadora'
   variantesOrdemViolada: boolean
+  variantErrors: string[]
 }
 
 interface KnowledgeBase {
@@ -206,6 +207,14 @@ export async function generateInitialEstimate(
         }
       : null
 
+  const variantErrors: string[] = []
+
+  if (otimistaResult.status === 'rejected') {
+    const msg = `Otimista: ${otimistaResult.reason instanceof Error ? otimistaResult.reason.message : String(otimistaResult.reason)}`
+    console.error('[generateEstimate]', msg)
+    variantErrors.push(msg)
+  }
+
   const conservadoraVariante: EstimateVariante | null =
     conservadoraResult.status === 'fulfilled'
       ? {
@@ -216,6 +225,12 @@ export async function generateInitialEstimate(
           nivelConfiancaJustificacao: conservadoraResult.value.nivel_confianca.justificacao,
         }
       : null
+
+  if (conservadoraResult.status === 'rejected') {
+    const msg = `Conservadora: ${conservadoraResult.reason instanceof Error ? conservadoraResult.reason.message : String(conservadoraResult.reason)}`
+    console.error('[generateEstimate]', msg)
+    variantErrors.push(msg)
+  }
 
   const variantesGeradas: EstimateVariante[] = [
     ...(otimistaVariante ? [otimistaVariante] : []),
@@ -261,6 +276,7 @@ export async function generateInitialEstimate(
     variantesGeradas,
     varianteSelecionada: 'Equilibrada',
     variantesOrdemViolada,
+    variantErrors,
   }
 }
 
@@ -358,5 +374,6 @@ export async function continueConversation(
     variantesGeradas: existingVariantes,
     varianteSelecionada: existingVarianteSelecionada,
     variantesOrdemViolada: existingOrdemViolada,
+    variantErrors: [],
   }
 }

@@ -54,6 +54,13 @@ export const generateEstimate: CollectionAfterChangeHook<Proposal> = async ({
           timestamp,
         })
       }
+      for (const err of result.variantErrors) {
+        logEntries.push({
+          evento: `Erro ao gerar variante — ${err}`,
+          user: req.user?.id,
+          timestamp,
+        })
+      }
 
       await req.payload.update({
         collection: 'proposals',
