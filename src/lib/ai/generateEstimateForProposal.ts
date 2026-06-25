@@ -3,7 +3,7 @@ import type { Proposal, Material, Machine, InternalRate, ProjectLibrary } from '
 import { analyzeImages } from './analyzeImages'
 import { buildInitialPrompt } from './buildPrompt'
 import { generateEstimate } from './claudeClient'
-import { parseEstimate, type EstimateOutput } from './parseEstimate'
+import { parseEstimate } from './parseEstimate'
 import { describeAttachments } from './readAttachments'
 import { analyzeFigmaLink } from '../figma'
 import { buildSystemPrompt, ESTIMATE_DEFAULT_RULES } from './prompts/estimateSystem'
@@ -84,13 +84,10 @@ function normalizeConfianca(nivel: string): 'Alto' | 'Medio' | 'Baixo' {
 const EQUILIBRADA_INSTRUCTION =
   '\n\n## Instrução de variante\nEsta é a variante **EQUILIBRADA**. Usa estimativas standard sem optimismo nem pessimismo — a tua estimativa base normal.'
 
-function buildOtimistaConstraint(
-  equilibradaTotal: number,
-  equilibradaEstimativa: EstimateOutput['estimativa'],
-): string {
+function buildOtimistaConstraint(equilibradaTotal: number): string {
   const fmt = equilibradaTotal.toFixed(2)
   return `\n\n## Instrução de variante — OTIMISTA
-A variante Equilibrada para este projecto totalizou **€${fmt}**.
+A variante Equilibrada para este projecto totalizou €${fmt}.
 
 Esta é a variante **OTIMISTA**. O teu \`total_geral\` DEVE ser **estritamente inferior a €${fmt}**.
 Estratégia:
@@ -99,19 +96,13 @@ Estratégia:
 - Tempos de trabalho na estimativa mais baixa
 - Sem margens de contingência adicionais
 
-Se o teu \`total_geral\` for igual ou superior a €${fmt}, revê os valores e reduz até ao constraint ser satisfeito.
-
-Estimativa Equilibrada de referência:
-${JSON.stringify(equilibradaEstimativa, null, 2)}`
+Gera uma estimativa nova e independente a partir do briefing acima — não repitas os valores da Equilibrada.`
 }
 
-function buildConservadoraConstraint(
-  equilibradaTotal: number,
-  equilibradaEstimativa: EstimateOutput['estimativa'],
-): string {
+function buildConservadoraConstraint(equilibradaTotal: number): string {
   const fmt = equilibradaTotal.toFixed(2)
   return `\n\n## Instrução de variante — CONSERVADORA
-A variante Equilibrada para este projecto totalizou **€${fmt}**.
+A variante Equilibrada para este projecto totalizou €${fmt}.
 
 Esta é a variante **CONSERVADORA**. O teu \`total_geral\` DEVE ser **estritamente superior a €${fmt}**.
 Estratégia:
@@ -119,10 +110,7 @@ Estratégia:
 - Aplica uma margem de contingência de 15-20% por item nas quantidades e tempos de trabalho
 - Assume condições de execução mais exigentes do que o habitual
 
-Se o teu \`total_geral\` for igual ou inferior a €${fmt}, revê os valores e aumenta até ao constraint ser satisfeito.
-
-Estimativa Equilibrada de referência:
-${JSON.stringify(equilibradaEstimativa, null, 2)}`
+Gera uma estimativa nova e independente a partir do briefing acima — não repitas os valores da Equilibrada.`
 }
 
 async function callAI(
@@ -198,11 +186,11 @@ export async function generateInitialEstimate(
   // Steps 2 & 3: Otimista and Conservadora run in parallel, each given the Equilibrada total as a hard constraint
   const [otimistaResult, conservadoraResult] = await Promise.allSettled([
     callAIWithRetry(
-      [{ role: 'user', content: baseUserMessage + buildOtimistaConstraint(equilibradaTotal, equilibradaParsed.estimativa) }],
+      [{ role: 'user', content: baseUserMessage + buildOtimistaConstraint(equilibradaTotal) }],
       systemPrompt,
     ),
     callAIWithRetry(
-      [{ role: 'user', content: baseUserMessage + buildConservadoraConstraint(equilibradaTotal, equilibradaParsed.estimativa) }],
+      [{ role: 'user', content: baseUserMessage + buildConservadoraConstraint(equilibradaTotal) }],
       systemPrompt,
     ),
   ])
