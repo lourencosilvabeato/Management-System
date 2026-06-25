@@ -43,7 +43,7 @@ function isValidEstimateOutput(obj: unknown): obj is EstimateOutput {
 
   const nc = o.nivel_confianca as Record<string, unknown> | undefined
   if (!nc || typeof nc !== 'object') return false
-  if (!['Alto', 'Medio', 'Baixo'].includes(nc.nivel as string)) return false
+  if (!['Alto', 'Medio', 'Médio', 'Baixo'].includes(nc.nivel as string)) return false
   if (typeof nc.justificacao !== 'string') return false
 
   const est = o.estimativa as Record<string, unknown> | undefined

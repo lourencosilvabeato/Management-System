@@ -79,7 +79,7 @@ function getMockupUrls(proposal: Proposal): string[] {
 function normalizeConfianca(nivel: string): 'Alto' | 'Medio' | 'Baixo' {
   if (nivel === 'Alto') return 'Alto'
   if (nivel === 'Baixo') return 'Baixo'
-  return 'Medio'
+  return 'Medio' // normalises both "Medio" and "Médio"
 }
 
 const EQUILIBRADA_INSTRUCTION =
