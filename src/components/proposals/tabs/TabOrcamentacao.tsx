@@ -309,7 +309,7 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
           {LOADING_MESSAGES[loadingMsgIdx]}
         </p>
         <p className="text-xs text-muted-foreground">
-          A geração de 3 variantes pode demorar 1 a 2 minutos.
+          A geração de 3 variantes pode demorar até 5 minutos.
         </p>
       </div>
     )
@@ -318,10 +318,19 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
   // Variantes from the active session
   const variantesGeradas = (activeSessao?.variantesGeradas ?? []) as VarianteData[]
   const varianteSelecionada = (activeSessao?.varianteSelecionada ?? 'Equilibrada') as VarianteTipo
+  const variantesOrdemViolada = (activeSessao as Record<string, unknown> | undefined)?.variantesOrdemViolada === true
 
   // State: estimate available
   return (
     <div className="space-y-6 py-4">
+      {variantesOrdemViolada && (
+        <div className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          <span className="mt-0.5 shrink-0">⚠</span>
+          <span>
+            A IA não respeitou o constraint de ordenação nesta geração — os totais das variantes podem não estar em ordem crescente (Otimista &lt; Equilibrada &lt; Conservadora). Verifica os valores antes de enviar.
+          </span>
+        </div>
+      )}
       {variantesGeradas.length > 0 && (
         <VariantePicker
           variantes={variantesGeradas}

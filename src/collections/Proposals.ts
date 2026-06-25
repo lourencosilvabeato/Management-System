@@ -285,6 +285,13 @@ export const Proposals: CollectionConfig = {
           admin: { readOnly: true },
         },
         {
+          name: 'variantesOrdemViolada',
+          label: 'Ordenação das variantes violada',
+          type: 'checkbox',
+          defaultValue: false,
+          admin: { readOnly: true, description: 'Verdadeiro se a IA não respeitou o constraint Otimista < Equilibrada < Conservadora.' },
+        },
+        {
           name: 'inputsUsados',
           label: 'Inputs Usados (snapshot)',
           type: 'json',

@@ -3,7 +3,7 @@ import type { Proposal, Material, Machine, InternalRate, ProjectLibrary } from '
 import { analyzeImages } from './analyzeImages'
 import { buildInitialPrompt } from './buildPrompt'
 import { generateEstimate } from './claudeClient'
-import { parseEstimate } from './parseEstimate'
+import { parseEstimate, type EstimateOutput } from './parseEstimate'
 import { describeAttachments } from './readAttachments'
 import { analyzeFigmaLink } from '../figma'
 import { buildSystemPrompt, ESTIMATE_DEFAULT_RULES } from './prompts/estimateSystem'
@@ -25,6 +25,7 @@ export interface EstimateResult {
   inputsUsados: Record<string, unknown>
   variantesGeradas: EstimateVariante[]
   varianteSelecionada: 'Otimista' | 'Equilibrada' | 'Conservadora'
+  variantesOrdemViolada: boolean
 }
 
 interface KnowledgeBase {
@@ -80,13 +81,48 @@ function normalizeConfianca(nivel: string): 'Alto' | 'Medio' | 'Baixo' {
   return 'Medio'
 }
 
-const VARIANT_INSTRUCTIONS: Record<'Otimista' | 'Equilibrada' | 'Conservadora', string> = {
-  Otimista:
-    '\n\n## Instrução de variante\nEsta é a variante **OTIMISTA**. Assume condições de execução ideais: utiliza as quantidades mínimas adequadas ao projecto, tempos de trabalho na estimativa baixa, sem contingências adicionais. Apresenta o custo mínimo realista.',
-  Equilibrada:
-    '\n\n## Instrução de variante\nEsta é a variante **EQUILIBRADA**. Usa estimativas standard sem optimismo nem pessimismo — a tua estimativa base normal.',
-  Conservadora:
-    '\n\n## Instrução de variante\nEsta é a variante **CONSERVADORA**. Inclui uma margem de contingência de 10-15% nas quantidades e tempos de trabalho para cobrir imprevistos. Assume condições de execução mais exigentes do que o habitual.',
+const EQUILIBRADA_INSTRUCTION =
+  '\n\n## Instrução de variante\nEsta é a variante **EQUILIBRADA**. Usa estimativas standard sem optimismo nem pessimismo — a tua estimativa base normal.'
+
+function buildOtimistaConstraint(
+  equilibradaTotal: number,
+  equilibradaEstimativa: EstimateOutput['estimativa'],
+): string {
+  const fmt = equilibradaTotal.toFixed(2)
+  return `\n\n## Instrução de variante — OTIMISTA
+A variante Equilibrada para este projecto totalizou **€${fmt}**.
+
+Esta é a variante **OTIMISTA**. O teu \`total_geral\` DEVE ser **estritamente inferior a €${fmt}**.
+Estratégia:
+- Usa as alternativas de materiais mais económicas que existam na base de conhecimento
+- Aplica as quantidades mínimas realistas por item
+- Tempos de trabalho na estimativa mais baixa
+- Sem margens de contingência adicionais
+
+Se o teu \`total_geral\` for igual ou superior a €${fmt}, revê os valores e reduz até ao constraint ser satisfeito.
+
+Estimativa Equilibrada de referência:
+${JSON.stringify(equilibradaEstimativa, null, 2)}`
+}
+
+function buildConservadoraConstraint(
+  equilibradaTotal: number,
+  equilibradaEstimativa: EstimateOutput['estimativa'],
+): string {
+  const fmt = equilibradaTotal.toFixed(2)
+  return `\n\n## Instrução de variante — CONSERVADORA
+A variante Equilibrada para este projecto totalizou **€${fmt}**.
+
+Esta é a variante **CONSERVADORA**. O teu \`total_geral\` DEVE ser **estritamente superior a €${fmt}**.
+Estratégia:
+- Usa as alternativas de materiais premium onde existam na base de conhecimento
+- Aplica uma margem de contingência de 15-20% por item nas quantidades e tempos de trabalho
+- Assume condições de execução mais exigentes do que o habitual
+
+Se o teu \`total_geral\` for igual ou inferior a €${fmt}, revê os valores e aumenta até ao constraint ser satisfeito.
+
+Estimativa Equilibrada de referência:
+${JSON.stringify(equilibradaEstimativa, null, 2)}`
 }
 
 async function callAI(
@@ -145,63 +181,89 @@ export async function generateInitialEstimate(
     figmaTextAnnotations: figmaAnalysis.textAnnotations,
   })
 
-  // Run all 3 variants in parallel
-  const variantTypes: Array<'Otimista' | 'Equilibrada' | 'Conservadora'> = [
-    'Otimista',
-    'Equilibrada',
-    'Conservadora',
+  // Step 1: Equilibrada first — it is the base from which the other two are derived
+  const equilibradaParsed = await callAIWithRetry(
+    [{ role: 'user', content: baseUserMessage + EQUILIBRADA_INSTRUCTION }],
+    systemPrompt,
+  )
+  const equilibradaTotal = equilibradaParsed.estimativa.total_geral
+  const equilibradaVariante: EstimateVariante = {
+    tipo: 'Equilibrada',
+    estimativa: equilibradaParsed.estimativa as unknown as Record<string, unknown>,
+    abordagemTecnica: equilibradaParsed.abordagem_tecnica,
+    nivelConfianca: normalizeConfianca(equilibradaParsed.nivel_confianca.nivel),
+    nivelConfiancaJustificacao: equilibradaParsed.nivel_confianca.justificacao,
+  }
+
+  // Steps 2 & 3: Otimista and Conservadora run in parallel, each given the Equilibrada total as a hard constraint
+  const [otimistaResult, conservadoraResult] = await Promise.allSettled([
+    callAIWithRetry(
+      [{ role: 'user', content: baseUserMessage + buildOtimistaConstraint(equilibradaTotal, equilibradaParsed.estimativa) }],
+      systemPrompt,
+    ),
+    callAIWithRetry(
+      [{ role: 'user', content: baseUserMessage + buildConservadoraConstraint(equilibradaTotal, equilibradaParsed.estimativa) }],
+      systemPrompt,
+    ),
+  ])
+
+  const otimistaVariante: EstimateVariante | null =
+    otimistaResult.status === 'fulfilled'
+      ? {
+          tipo: 'Otimista',
+          estimativa: otimistaResult.value.estimativa as unknown as Record<string, unknown>,
+          abordagemTecnica: otimistaResult.value.abordagem_tecnica,
+          nivelConfianca: normalizeConfianca(otimistaResult.value.nivel_confianca.nivel),
+          nivelConfiancaJustificacao: otimistaResult.value.nivel_confianca.justificacao,
+        }
+      : null
+
+  const conservadoraVariante: EstimateVariante | null =
+    conservadoraResult.status === 'fulfilled'
+      ? {
+          tipo: 'Conservadora',
+          estimativa: conservadoraResult.value.estimativa as unknown as Record<string, unknown>,
+          abordagemTecnica: conservadoraResult.value.abordagem_tecnica,
+          nivelConfianca: normalizeConfianca(conservadoraResult.value.nivel_confianca.nivel),
+          nivelConfiancaJustificacao: conservadoraResult.value.nivel_confianca.justificacao,
+        }
+      : null
+
+  const variantesGeradas: EstimateVariante[] = [
+    ...(otimistaVariante ? [otimistaVariante] : []),
+    equilibradaVariante,
+    ...(conservadoraVariante ? [conservadoraVariante] : []),
   ]
 
-  const variantResults = await Promise.allSettled(
-    variantTypes.map(async (tipo) => {
-      const variantMessage = baseUserMessage + VARIANT_INSTRUCTIONS[tipo]
-      const messages: Array<{ role: 'user' | 'assistant'; content: string }> = [
-        { role: 'user', content: variantMessage },
-      ]
-      const parsed = await callAIWithRetry(messages, systemPrompt)
-      const variante: EstimateVariante = {
-        tipo,
-        estimativa: parsed.estimativa as unknown as Record<string, unknown>,
-        abordagemTecnica: parsed.abordagem_tecnica,
-        nivelConfianca: normalizeConfianca(parsed.nivel_confianca.nivel),
-        nivelConfiancaJustificacao: parsed.nivel_confianca.justificacao,
-      }
-      return variante
-    }),
-  )
+  // Safety check — do not relabel, just flag if the AI ignored the constraint
+  const otimistaTotal =
+    otimistaVariante !== null
+      ? ((otimistaVariante.estimativa as { total_geral?: number }).total_geral ?? null)
+      : null
+  const conservadoraTotal =
+    conservadoraVariante !== null
+      ? ((conservadoraVariante.estimativa as { total_geral?: number }).total_geral ?? null)
+      : null
 
-  const raw: EstimateVariante[] = variantResults
-    .map((r) => (r.status === 'fulfilled' ? r.value : null))
-    .filter((v): v is EstimateVariante => v !== null)
+  const variantesOrdemViolada =
+    (otimistaTotal !== null && otimistaTotal >= equilibradaTotal) ||
+    (conservadoraTotal !== null && conservadoraTotal <= equilibradaTotal)
 
-  // Guarantee ordering: Otimista ≤ Equilibrada ≤ Conservadora regardless of what the AI returned
-  const tipoOrder: Array<'Otimista' | 'Equilibrada' | 'Conservadora'> = ['Otimista', 'Equilibrada', 'Conservadora']
-  const variantesGeradas: EstimateVariante[] = raw.length >= 2
-    ? [...raw]
-        .sort((a, b) => {
-          const tA = (a.estimativa as { total_geral?: number }).total_geral ?? 0
-          const tB = (b.estimativa as { total_geral?: number }).total_geral ?? 0
-          return tA - tB
-        })
-        .map((v, i) => ({ ...v, tipo: tipoOrder[i] ?? v.tipo }))
-    : raw
-
-  // Use Equilibrada as the default selected variant; fall back to whichever succeeded
-  const equilibrada =
-    variantesGeradas.find((v) => v.tipo === 'Equilibrada') ?? variantesGeradas[0]
-
-  if (!equilibrada) {
-    throw new Error('All estimate variants failed to generate')
+  if (variantesOrdemViolada) {
+    console.warn(
+      `[generateEstimate] Ordering constraint violated — ` +
+        `Otimista: €${otimistaTotal ?? 'N/A'}, Equilibrada: €${equilibradaTotal}, Conservadora: €${conservadoraTotal ?? 'N/A'}`,
+    )
   }
 
   const now = new Date().toISOString()
 
   return {
     conversaIA: [],
-    estimativaAtual: equilibrada.estimativa,
-    abordagemTecnica: equilibrada.abordagemTecnica,
-    nivelConfianca: equilibrada.nivelConfianca,
-    nivelConfiancaJustificacao: equilibrada.nivelConfiancaJustificacao,
+    estimativaAtual: equilibradaVariante.estimativa,
+    abordagemTecnica: equilibradaVariante.abordagemTecnica,
+    nivelConfianca: equilibradaVariante.nivelConfianca,
+    nivelConfiancaJustificacao: equilibradaVariante.nivelConfiancaJustificacao,
     inputsUsados: {
       briefingSnapshot: proposal.briefing,
       memoriacriativaSnapshot: proposal.memoriacriativa,
@@ -210,6 +272,7 @@ export async function generateInitialEstimate(
     },
     variantesGeradas,
     varianteSelecionada: 'Equilibrada',
+    variantesOrdemViolada,
   }
 }
 
@@ -294,6 +357,9 @@ export async function continueConversation(
     ((sessao as Record<string, unknown>).varianteSelecionada as 'Otimista' | 'Equilibrada' | 'Conservadora' | undefined) ??
     'Equilibrada'
 
+  const existingOrdemViolada =
+    ((sessao as Record<string, unknown>).variantesOrdemViolada as boolean | undefined) ?? false
+
   return {
     conversaIA: updatedConversaIA,
     estimativaAtual: parsed.estimativa as unknown as Record<string, unknown>,
@@ -303,5 +369,6 @@ export async function continueConversation(
     inputsUsados: (sessao.inputsUsados as Record<string, unknown>) ?? {},
     variantesGeradas: existingVariantes,
     varianteSelecionada: existingVarianteSelecionada,
+    variantesOrdemViolada: existingOrdemViolada,
   }
 }

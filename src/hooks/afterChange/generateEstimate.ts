@@ -39,6 +39,22 @@ export const generateEstimate: CollectionAfterChangeHook<Proposal> = async ({
         ? doc.sessaoOrcamentacao
         : []
 
+      const logEntries = [
+        ...(Array.isArray(doc.activityLog) ? doc.activityLog : []),
+        {
+          evento: `Estimativa IA gerada — confiança: ${result.nivelConfianca}`,
+          user: req.user?.id,
+          timestamp,
+        },
+      ]
+      if (result.variantesOrdemViolada) {
+        logEntries.push({
+          evento: 'Aviso: constraint de ordenação das variantes não respeitado pela IA — verifica os totais',
+          user: req.user?.id,
+          timestamp,
+        })
+      }
+
       await req.payload.update({
         collection: 'proposals',
         id: doc.id,
@@ -55,16 +71,10 @@ export const generateEstimate: CollectionAfterChangeHook<Proposal> = async ({
               inputsUsados: result.inputsUsados,
               variantesGeradas: result.variantesGeradas,
               varianteSelecionada: result.varianteSelecionada,
+              variantesOrdemViolada: result.variantesOrdemViolada,
             },
           ],
-          activityLog: [
-            ...(Array.isArray(doc.activityLog) ? doc.activityLog : []),
-            {
-              evento: `Estimativa IA gerada — confiança: ${result.nivelConfianca}`,
-              user: req.user?.id,
-              timestamp,
-            },
-          ],
+          activityLog: logEntries,
         },
         overrideAccess: true,
         context: { skipActivityLog: true },
