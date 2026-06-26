@@ -82,6 +82,12 @@ function normalizeConfianca(nivel: string): 'Alto' | 'Medio' | 'Baixo' {
   return 'Medio' // normalises both "Medio" and "Médio"
 }
 
+function sumItemTotals(estimativa: Record<string, unknown>): number | null {
+  const items = (estimativa as { items?: Array<{ total_item?: unknown }> }).items
+  if (!Array.isArray(items) || items.length === 0) return null
+  return items.reduce((s, item) => s + (typeof item.total_item === 'number' ? item.total_item : 0), 0)
+}
+
 const EQUILIBRADA_INSTRUCTION =
   '\n\n## Instrução de variante\nEsta é a variante **EQUILIBRADA**. Usa estimativas standard sem optimismo nem pessimismo — a tua estimativa base normal.'
 
@@ -175,7 +181,8 @@ export async function generateInitialEstimate(
     [{ role: 'user', content: baseUserMessage + EQUILIBRADA_INSTRUCTION }],
     systemPrompt,
   )
-  const equilibradaTotal = equilibradaParsed.estimativa.total_geral
+  // Use sum of item totals as the reference — the AI's total_geral is sometimes arithmetically wrong
+  const equilibradaTotal = sumItemTotals(equilibradaParsed.estimativa) ?? equilibradaParsed.estimativa.total_geral
   const equilibradaVariante: EstimateVariante = {
     tipo: 'Equilibrada',
     estimativa: equilibradaParsed.estimativa as unknown as Record<string, unknown>,
@@ -241,15 +248,9 @@ export async function generateInitialEstimate(
     ...(conservadoraVariante ? [conservadoraVariante] : []),
   ]
 
-  // Safety check — do not relabel, just flag if the AI ignored the constraint
-  const otimistaTotal =
-    otimistaVariante !== null
-      ? ((otimistaVariante.estimativa as { total_geral?: number }).total_geral ?? null)
-      : null
-  const conservadoraTotal =
-    conservadoraVariante !== null
-      ? ((conservadoraVariante.estimativa as { total_geral?: number }).total_geral ?? null)
-      : null
+  // Safety check using item sums (same calculation the UI shows) — total_geral can be arithmetically off
+  const otimistaTotal = otimistaVariante !== null ? sumItemTotals(otimistaVariante.estimativa) : null
+  const conservadoraTotal = conservadoraVariante !== null ? sumItemTotals(conservadoraVariante.estimativa) : null
 
   const variantesOrdemViolada =
     (otimistaTotal !== null && otimistaTotal >= equilibradaTotal) ||
