@@ -184,17 +184,20 @@ export async function generateInitialEstimate(
     nivelConfiancaJustificacao: equilibradaParsed.nivel_confianca.justificacao,
   }
 
-  // Steps 2 & 3: Otimista and Conservadora run in parallel, each given the Equilibrada total as a hard constraint
-  const [otimistaResult, conservadoraResult] = await Promise.allSettled([
-    callAIWithRetry(
-      [{ role: 'user', content: baseUserMessage + buildOtimistaConstraint(equilibradaTotal) }],
-      systemPrompt,
-    ),
-    callAIWithRetry(
-      [{ role: 'user', content: baseUserMessage + buildConservadoraConstraint(equilibradaTotal) }],
-      systemPrompt,
-    ),
-  ])
+  // Steps 2 & 3: Otimista then Conservadora — sequential to avoid rate-limit failures
+  const otimistaResult = await callAIWithRetry(
+    [{ role: 'user', content: baseUserMessage + buildOtimistaConstraint(equilibradaTotal) }],
+    systemPrompt,
+  )
+    .then((value) => ({ status: 'fulfilled' as const, value }))
+    .catch((reason: unknown) => ({ status: 'rejected' as const, reason }))
+
+  const conservadoraResult = await callAIWithRetry(
+    [{ role: 'user', content: baseUserMessage + buildConservadoraConstraint(equilibradaTotal) }],
+    systemPrompt,
+  )
+    .then((value) => ({ status: 'fulfilled' as const, value }))
+    .catch((reason: unknown) => ({ status: 'rejected' as const, reason }))
 
   const otimistaVariante: EstimateVariante | null =
     otimistaResult.status === 'fulfilled'

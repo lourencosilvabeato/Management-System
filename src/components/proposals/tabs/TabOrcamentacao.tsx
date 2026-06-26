@@ -454,16 +454,19 @@ function VariantePicker({
         {(['Otimista', 'Equilibrada', 'Conservadora'] as VarianteTipo[]).map((tipo) => {
           const v = variantes.find((x) => x.tipo === tipo)
           const isSelected = selecionada === tipo
+          const isMissing = !v
           const total = getVarianteTotal(v?.estimativa)
           return (
             <button
               key={tipo}
-              onClick={() => !isSelected && onSelect(tipo)}
-              disabled={disabled || isSelected}
+              onClick={() => !isSelected && !isMissing && onSelect(tipo)}
+              disabled={disabled || isSelected || isMissing}
               className={`rounded-md border p-3 text-left transition-all space-y-1 ${
                 isSelected
                   ? 'border-black bg-black text-white'
-                  : 'border-border hover:border-foreground/40 bg-background'
+                  : isMissing
+                    ? 'border-border bg-muted/30 opacity-60 cursor-not-allowed'
+                    : 'border-border hover:border-foreground/40 bg-background'
               }`}
             >
               <div className={`text-xs font-semibold uppercase tracking-wide ${isSelected ? 'text-white' : ''}`}>
@@ -484,6 +487,9 @@ function VariantePicker({
               )}
               {isSelected && (
                 <div className="text-[10px] text-white/80 font-medium">✓ Seleccionada</div>
+              )}
+              {isMissing && (
+                <div className="text-[10px] text-rose-500 font-medium">Não gerada — regenerar</div>
               )}
             </button>
           )
