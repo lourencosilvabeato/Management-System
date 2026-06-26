@@ -92,30 +92,32 @@ const EQUILIBRADA_INSTRUCTION =
   '\n\n## Instrução de variante\nEsta é a variante **EQUILIBRADA**. Usa estimativas standard sem optimismo nem pessimismo — a tua estimativa base normal.'
 
 function buildOtimistaConstraint(equilibradaTotal: number): string {
-  const fmt = equilibradaTotal.toFixed(2)
+  const min = (equilibradaTotal * 0.80).toFixed(2)
+  const max = (equilibradaTotal * 0.93).toFixed(2)
   return `\n\n## Instrução de variante — OTIMISTA
-A variante Equilibrada para este projecto totalizou €${fmt}.
+A variante Equilibrada para este projecto totalizou €${equilibradaTotal.toFixed(2)}.
 
-Esta é a variante **OTIMISTA**. O teu \`total_geral\` DEVE ser **estritamente inferior a €${fmt}**.
+Esta é a variante **OTIMISTA**. O teu \`total_geral\` deve estar entre **€${min} e €${max}** (entre 80% e 93% da Equilibrada).
 Estratégia:
-- Usa as alternativas de materiais mais económicas que existam na base de conhecimento
-- Aplica as quantidades mínimas realistas por item
-- Tempos de trabalho na estimativa mais baixa
-- Sem margens de contingência adicionais
+- Mantém a especificação técnica base — não elimina rubricas essenciais
+- Usa materiais standard ou ligeiramente mais económicos onde existam alternativas directas na base de conhecimento
+- Quantidades ajustadas para o mínimo realista por item — sem especulação
+- Sem margem de contingência
 
 Gera uma estimativa nova e independente a partir do briefing acima — não repitas os valores da Equilibrada.`
 }
 
 function buildConservadoraConstraint(equilibradaTotal: number): string {
-  const fmt = equilibradaTotal.toFixed(2)
+  const min = (equilibradaTotal * 1.15).toFixed(2)
+  const max = (equilibradaTotal * 1.30).toFixed(2)
   return `\n\n## Instrução de variante — CONSERVADORA
-A variante Equilibrada para este projecto totalizou €${fmt}.
+A variante Equilibrada para este projecto totalizou €${equilibradaTotal.toFixed(2)}.
 
-Esta é a variante **CONSERVADORA**. O teu \`total_geral\` DEVE ser **estritamente superior a €${fmt}**.
+Esta é a variante **CONSERVADORA**. O teu \`total_geral\` deve estar entre **€${min} e €${max}** (entre 115% e 130% da Equilibrada).
 Estratégia:
-- Usa as alternativas de materiais premium onde existam na base de conhecimento
-- Aplica uma margem de contingência de 15-20% por item nas quantidades e tempos de trabalho
-- Assume condições de execução mais exigentes do que o habitual
+- Adiciona uma margem de contingência de 15-20% nas quantidades de materiais e tempos de trabalho
+- Assume condições de execução ligeiramente mais exigentes do que o habitual (acessos difíceis, retrabalho possível)
+- Considera acabamentos ou especificações técnicas de nível acima quando existirem na base de conhecimento
 
 Gera uma estimativa nova e independente a partir do briefing acima — não repitas os valores da Equilibrada.`
 }
