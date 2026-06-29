@@ -262,29 +262,6 @@ export interface Proposal {
         abordagemTecnica?: string | null;
         nivelConfianca?: ('Alto' | 'Medio' | 'Baixo') | null;
         nivelConfiancaJustificacao?: string | null;
-        variantesGeradas?:
-          | {
-              tipo?: ('Otimista' | 'Equilibrada' | 'Conservadora') | null;
-              estimativa?:
-                | {
-                    [k: string]: unknown;
-                  }
-                | unknown[]
-                | string
-                | number
-                | boolean
-                | null;
-              abordagemTecnica?: string | null;
-              nivelConfianca?: ('Alto' | 'Medio' | 'Baixo') | null;
-              nivelConfiancaJustificacao?: string | null;
-              id?: string | null;
-            }[]
-          | null;
-        varianteSelecionada?: ('Otimista' | 'Equilibrada' | 'Conservadora') | null;
-        /**
-         * Verdadeiro se a IA não respeitou o constraint Otimista < Equilibrada < Conservadora.
-         */
-        variantesOrdemViolada?: boolean | null;
         inputsUsados?:
           | {
               [k: string]: unknown;
@@ -590,18 +567,6 @@ export interface ProposalsSelect<T extends boolean = true> {
         abordagemTecnica?: T;
         nivelConfianca?: T;
         nivelConfiancaJustificacao?: T;
-        variantesGeradas?:
-          | T
-          | {
-              tipo?: T;
-              estimativa?: T;
-              abordagemTecnica?: T;
-              nivelConfianca?: T;
-              nivelConfiancaJustificacao?: T;
-              id?: T;
-            };
-        varianteSelecionada?: T;
-        variantesOrdemViolada?: T;
         inputsUsados?: T;
         id?: T;
       };

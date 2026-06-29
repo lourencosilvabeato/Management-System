@@ -8,14 +8,6 @@ import { describeAttachments } from './readAttachments'
 import { analyzeFigmaLink } from '../figma'
 import { buildSystemPrompt, ESTIMATE_DEFAULT_RULES } from './prompts/estimateSystem'
 
-export interface EstimateVariante {
-  tipo: 'Otimista' | 'Equilibrada' | 'Conservadora'
-  estimativa: Record<string, unknown>
-  abordagemTecnica: string
-  nivelConfianca: 'Alto' | 'Medio' | 'Baixo'
-  nivelConfiancaJustificacao: string
-}
-
 export interface EstimateResult {
   conversaIA: Array<{ role: 'user' | 'assistant'; content: string; timestamp: string }>
   estimativaAtual: Record<string, unknown>
@@ -23,10 +15,6 @@ export interface EstimateResult {
   nivelConfianca: 'Alto' | 'Medio' | 'Baixo'
   nivelConfiancaJustificacao: string
   inputsUsados: Record<string, unknown>
-  variantesGeradas: EstimateVariante[]
-  varianteSelecionada: 'Otimista' | 'Equilibrada' | 'Conservadora'
-  variantesOrdemViolada: boolean
-  variantErrors: string[]
 }
 
 interface KnowledgeBase {
@@ -82,46 +70,6 @@ function normalizeConfianca(nivel: string): 'Alto' | 'Medio' | 'Baixo' {
   return 'Medio' // normalises both "Medio" and "Médio"
 }
 
-function sumItemTotals(estimativa: Record<string, unknown>): number | null {
-  const items = (estimativa as { items?: Array<{ total_item?: unknown }> }).items
-  if (!Array.isArray(items) || items.length === 0) return null
-  return items.reduce((s, item) => s + (typeof item.total_item === 'number' ? item.total_item : 0), 0)
-}
-
-const EQUILIBRADA_INSTRUCTION =
-  '\n\n## Instrução de variante\nEsta é a variante **EQUILIBRADA**. Usa estimativas standard sem optimismo nem pessimismo — a tua estimativa base normal.'
-
-function buildOtimistaConstraint(equilibradaTotal: number): string {
-  const min = (equilibradaTotal * 0.80).toFixed(2)
-  const max = (equilibradaTotal * 0.93).toFixed(2)
-  return `\n\n## Instrução de variante — OTIMISTA
-A variante Equilibrada para este projecto totalizou €${equilibradaTotal.toFixed(2)}.
-
-Esta é a variante **OTIMISTA**. O teu \`total_geral\` deve estar entre **€${min} e €${max}** (entre 80% e 93% da Equilibrada).
-Estratégia:
-- Mantém a especificação técnica base — não elimina rubricas essenciais
-- Usa materiais standard ou ligeiramente mais económicos onde existam alternativas directas na base de conhecimento
-- Quantidades ajustadas para o mínimo realista por item — sem especulação
-- Sem margem de contingência
-
-Gera uma estimativa nova e independente a partir do briefing acima — não repitas os valores da Equilibrada.`
-}
-
-function buildConservadoraConstraint(equilibradaTotal: number): string {
-  const min = (equilibradaTotal * 1.15).toFixed(2)
-  const max = (equilibradaTotal * 1.30).toFixed(2)
-  return `\n\n## Instrução de variante — CONSERVADORA
-A variante Equilibrada para este projecto totalizou €${equilibradaTotal.toFixed(2)}.
-
-Esta é a variante **CONSERVADORA**. O teu \`total_geral\` deve estar entre **€${min} e €${max}** (entre 115% e 130% da Equilibrada).
-Estratégia:
-- Adiciona uma margem de contingência de 15-20% nas quantidades de materiais e tempos de trabalho
-- Assume condições de execução ligeiramente mais exigentes do que o habitual (acessos difíceis, retrabalho possível)
-- Considera acabamentos ou especificações técnicas de nível acima quando existirem na base de conhecimento
-
-Gera uma estimativa nova e independente a partir do briefing acima — não repitas os valores da Equilibrada.`
-}
-
 async function callAI(
   messages: Array<{ role: 'user' | 'assistant'; content: string }>,
   systemPrompt: string,
@@ -171,118 +119,32 @@ export async function generateInitialEstimate(
     proposal.figmaLink ? analyzeFigmaLink(proposal.figmaLink) : Promise.resolve({ imageDescription: '', textAnnotations: '' }),
   ])
 
-  const baseUserMessage = buildInitialPrompt(proposal, knowledgeBase, imageDescription, {
+  const userMessage = buildInitialPrompt(proposal, knowledgeBase, imageDescription, {
     attachmentText: attachmentContent.textContent,
     attachmentImageDescription: attachmentContent.imageDescription,
     figmaImageDescription: figmaAnalysis.imageDescription,
     figmaTextAnnotations: figmaAnalysis.textAnnotations,
   })
 
-  // Step 1: Equilibrada first — it is the base from which the other two are derived
-  const equilibradaParsed = await callAIWithRetry(
-    [{ role: 'user', content: baseUserMessage + EQUILIBRADA_INSTRUCTION }],
+  const parsed = await callAIWithRetry(
+    [{ role: 'user', content: userMessage }],
     systemPrompt,
   )
-  // Use sum of item totals as the reference — the AI's total_geral is sometimes arithmetically wrong
-  const equilibradaTotal = sumItemTotals(equilibradaParsed.estimativa) ?? equilibradaParsed.estimativa.total_geral
-  const equilibradaVariante: EstimateVariante = {
-    tipo: 'Equilibrada',
-    estimativa: equilibradaParsed.estimativa as unknown as Record<string, unknown>,
-    abordagemTecnica: equilibradaParsed.abordagem_tecnica,
-    nivelConfianca: normalizeConfianca(equilibradaParsed.nivel_confianca.nivel),
-    nivelConfiancaJustificacao: equilibradaParsed.nivel_confianca.justificacao,
-  }
-
-  // Steps 2 & 3: Otimista then Conservadora — sequential to avoid rate-limit failures
-  const otimistaResult = await callAIWithRetry(
-    [{ role: 'user', content: baseUserMessage + buildOtimistaConstraint(equilibradaTotal) }],
-    systemPrompt,
-  )
-    .then((value) => ({ status: 'fulfilled' as const, value }))
-    .catch((reason: unknown) => ({ status: 'rejected' as const, reason }))
-
-  const conservadoraResult = await callAIWithRetry(
-    [{ role: 'user', content: baseUserMessage + buildConservadoraConstraint(equilibradaTotal) }],
-    systemPrompt,
-  )
-    .then((value) => ({ status: 'fulfilled' as const, value }))
-    .catch((reason: unknown) => ({ status: 'rejected' as const, reason }))
-
-  const otimistaVariante: EstimateVariante | null =
-    otimistaResult.status === 'fulfilled'
-      ? {
-          tipo: 'Otimista',
-          estimativa: otimistaResult.value.estimativa as unknown as Record<string, unknown>,
-          abordagemTecnica: otimistaResult.value.abordagem_tecnica,
-          nivelConfianca: normalizeConfianca(otimistaResult.value.nivel_confianca.nivel),
-          nivelConfiancaJustificacao: otimistaResult.value.nivel_confianca.justificacao,
-        }
-      : null
-
-  const variantErrors: string[] = []
-
-  if (otimistaResult.status === 'rejected') {
-    const msg = `Otimista: ${otimistaResult.reason instanceof Error ? otimistaResult.reason.message : String(otimistaResult.reason)}`
-    console.error('[generateEstimate]', msg)
-    variantErrors.push(msg)
-  }
-
-  const conservadoraVariante: EstimateVariante | null =
-    conservadoraResult.status === 'fulfilled'
-      ? {
-          tipo: 'Conservadora',
-          estimativa: conservadoraResult.value.estimativa as unknown as Record<string, unknown>,
-          abordagemTecnica: conservadoraResult.value.abordagem_tecnica,
-          nivelConfianca: normalizeConfianca(conservadoraResult.value.nivel_confianca.nivel),
-          nivelConfiancaJustificacao: conservadoraResult.value.nivel_confianca.justificacao,
-        }
-      : null
-
-  if (conservadoraResult.status === 'rejected') {
-    const msg = `Conservadora: ${conservadoraResult.reason instanceof Error ? conservadoraResult.reason.message : String(conservadoraResult.reason)}`
-    console.error('[generateEstimate]', msg)
-    variantErrors.push(msg)
-  }
-
-  const variantesGeradas: EstimateVariante[] = [
-    ...(otimistaVariante ? [otimistaVariante] : []),
-    equilibradaVariante,
-    ...(conservadoraVariante ? [conservadoraVariante] : []),
-  ]
-
-  // Safety check using item sums (same calculation the UI shows) — total_geral can be arithmetically off
-  const otimistaTotal = otimistaVariante !== null ? sumItemTotals(otimistaVariante.estimativa) : null
-  const conservadoraTotal = conservadoraVariante !== null ? sumItemTotals(conservadoraVariante.estimativa) : null
-
-  const variantesOrdemViolada =
-    (otimistaTotal !== null && otimistaTotal >= equilibradaTotal) ||
-    (conservadoraTotal !== null && conservadoraTotal <= equilibradaTotal)
-
-  if (variantesOrdemViolada) {
-    console.warn(
-      `[generateEstimate] Ordering constraint violated — ` +
-        `Otimista: €${otimistaTotal ?? 'N/A'}, Equilibrada: €${equilibradaTotal}, Conservadora: €${conservadoraTotal ?? 'N/A'}`,
-    )
-  }
 
   const now = new Date().toISOString()
 
   return {
     conversaIA: [],
-    estimativaAtual: equilibradaVariante.estimativa,
-    abordagemTecnica: equilibradaVariante.abordagemTecnica,
-    nivelConfianca: equilibradaVariante.nivelConfianca,
-    nivelConfiancaJustificacao: equilibradaVariante.nivelConfiancaJustificacao,
+    estimativaAtual: parsed.estimativa as unknown as Record<string, unknown>,
+    abordagemTecnica: parsed.abordagem_tecnica,
+    nivelConfianca: normalizeConfianca(parsed.nivel_confianca.nivel),
+    nivelConfiancaJustificacao: parsed.nivel_confianca.justificacao,
     inputsUsados: {
       briefingSnapshot: proposal.briefing,
       memoriacriativaSnapshot: proposal.memoriacriativa,
       maquetesIds: mockupUrls,
       timestamp: now,
     },
-    variantesGeradas,
-    varianteSelecionada: 'Equilibrada',
-    variantesOrdemViolada,
-    variantErrors,
   }
 }
 
@@ -361,15 +223,6 @@ export async function continueConversation(
     { role: 'assistant', content: JSON.stringify(parsed), timestamp: now },
   ]
 
-  // Preserve existing variants from the session (chat does not regenerate variants)
-  const existingVariantes = ((sessao as Record<string, unknown>).variantesGeradas ?? []) as EstimateVariante[]
-  const existingVarianteSelecionada =
-    ((sessao as Record<string, unknown>).varianteSelecionada as 'Otimista' | 'Equilibrada' | 'Conservadora' | undefined) ??
-    'Equilibrada'
-
-  const existingOrdemViolada =
-    ((sessao as Record<string, unknown>).variantesOrdemViolada as boolean | undefined) ?? false
-
   return {
     conversaIA: updatedConversaIA,
     estimativaAtual: parsed.estimativa as unknown as Record<string, unknown>,
@@ -377,9 +230,5 @@ export async function continueConversation(
     nivelConfianca: normalizeConfianca(parsed.nivel_confianca.nivel),
     nivelConfiancaJustificacao: parsed.nivel_confianca.justificacao,
     inputsUsados: (sessao.inputsUsados as Record<string, unknown>) ?? {},
-    variantesGeradas: existingVariantes,
-    varianteSelecionada: existingVarianteSelecionada,
-    variantesOrdemViolada: existingOrdemViolada,
-    variantErrors: [],
   }
 }

@@ -77,7 +77,6 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
   // Number of sessions when generation was triggered — used to detect when a NEW session arrives
   const [sessionsAtTrigger, setSessionsAtTrigger] = useState<number | null>(null)
   const [triggering, setTriggering] = useState(false)
-  const [selectingVariante, setSelectingVariante] = useState(false)
 
   const onRefreshRef = useRef(onRefresh)
   useEffect(() => {
@@ -186,33 +185,6 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
     }
   }
 
-  const handleSelectVariante = async (tipo: 'Otimista' | 'Equilibrada' | 'Conservadora') => {
-    setSelectingVariante(true)
-    try {
-      const res = await fetch(`/api/proposals/${proposal.id}/select-variant`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ tipo }),
-      })
-      if (!res.ok) return
-      const data = await res.json() as {
-        estimativaAtual: unknown
-        abordagemTecnica: string
-        nivelConfianca: string
-        nivelConfiancaJustificacao: string
-        varianteSelecionada: string
-      }
-      const est = data.estimativaAtual as EstimateOutput['estimativa']
-      if (est?.items) setCurrentEstimativa(est)
-      setAbordagem(data.abordagemTecnica)
-      setNivelConfianca(data.nivelConfianca)
-      setNivelJustificacao(data.nivelConfiancaJustificacao)
-      onRefreshRef.current()
-    } finally {
-      setSelectingVariante(false)
-    }
-  }
-
   const handleRegenerate = async () => {
     setCurrentEstimativa(null)
     setGenerationError(false)
@@ -309,37 +281,15 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
           {LOADING_MESSAGES[loadingMsgIdx]}
         </p>
         <p className="text-xs text-muted-foreground">
-          A geração de 3 variantes pode demorar até 5 minutos.
+          A geração pode demorar até 2 minutos.
         </p>
       </div>
     )
   }
 
-  // Variantes from the active session
-  const variantesGeradas = (activeSessao?.variantesGeradas ?? []) as VarianteData[]
-  const varianteSelecionada = (activeSessao?.varianteSelecionada ?? 'Equilibrada') as VarianteTipo
-  const variantesOrdemViolada = (activeSessao as Record<string, unknown> | undefined)?.variantesOrdemViolada === true
-
   // State: estimate available
   return (
     <div className="space-y-6 py-4">
-      {variantesOrdemViolada && (
-        <div className="flex items-start gap-3 rounded-md border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800">
-          <span className="mt-0.5 shrink-0">⚠</span>
-          <span>
-            A IA não respeitou o constraint de ordenação nesta geração — os totais das variantes podem não estar em ordem crescente (Otimista &lt; Equilibrada &lt; Conservadora). Verifica os valores antes de enviar.
-          </span>
-        </div>
-      )}
-      {variantesGeradas.length > 0 && (
-        <VariantePicker
-          variantes={variantesGeradas}
-          selecionada={varianteSelecionada}
-          onSelect={(tipo) => void handleSelectVariante(tipo)}
-          disabled={selectingVariante || isReadOnly}
-        />
-      )}
-
       {currentEstimativa && (
         <EstimateEditor
           estimativa={currentEstimativa}
@@ -404,111 +354,6 @@ export function TabOrcamentacao({ proposal, onRefresh }: Props) {
       )}
     </div>
   )
-}
-
-// ── Variant picker ────────────────────────────────────────────────────────────
-
-type VarianteTipo = 'Otimista' | 'Equilibrada' | 'Conservadora'
-
-interface VarianteData {
-  tipo?: VarianteTipo | null
-  estimativa?: unknown
-  nivelConfianca?: string | null
-}
-
-const VARIANTE_LABELS: Record<VarianteTipo, string> = {
-  Otimista: 'Otimista',
-  Equilibrada: 'Equilibrada',
-  Conservadora: 'Conservadora',
-}
-
-const VARIANTE_DESCRIPTIONS: Record<VarianteTipo, string> = {
-  Otimista: 'Condições ideais, quantidades mínimas',
-  Equilibrada: 'Estimativa standard equilibrada',
-  Conservadora: 'Com margem de contingência',
-}
-
-const CONFIANCA_COLORS: Record<string, string> = {
-  Alto: 'text-emerald-600',
-  Medio: 'text-amber-600',
-  Baixo: 'text-rose-600',
-}
-
-function VariantePicker({
-  variantes,
-  selecionada,
-  onSelect,
-  disabled,
-}: {
-  variantes: VarianteData[]
-  selecionada: VarianteTipo
-  onSelect: (tipo: VarianteTipo) => void
-  disabled: boolean
-}) {
-  return (
-    <div className="space-y-2">
-      <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-        Variantes geradas — selecciona uma para trabalhar
-      </p>
-      <div className="grid grid-cols-3 gap-3">
-        {(['Otimista', 'Equilibrada', 'Conservadora'] as VarianteTipo[]).map((tipo) => {
-          const v = variantes.find((x) => x.tipo === tipo)
-          const isSelected = selecionada === tipo
-          const isMissing = !v
-          const total = getVarianteTotal(v?.estimativa)
-          return (
-            <button
-              key={tipo}
-              onClick={() => !isSelected && !isMissing && onSelect(tipo)}
-              disabled={disabled || isSelected || isMissing}
-              className={`rounded-md border p-3 text-left transition-all space-y-1 ${
-                isSelected
-                  ? 'border-black bg-black text-white'
-                  : isMissing
-                    ? 'border-border bg-muted/30 opacity-60 cursor-not-allowed'
-                    : 'border-border hover:border-foreground/40 bg-background'
-              }`}
-            >
-              <div className={`text-xs font-semibold uppercase tracking-wide ${isSelected ? 'text-white' : ''}`}>
-                {VARIANTE_LABELS[tipo]}
-              </div>
-              <div className={`text-xs ${isSelected ? 'text-white/70' : 'text-muted-foreground'}`}>
-                {VARIANTE_DESCRIPTIONS[tipo]}
-              </div>
-              {total !== null && (
-                <div className={`text-sm font-bold font-mono mt-1 ${isSelected ? 'text-white' : ''}`}>
-                  {total.toLocaleString('pt-PT', { minimumFractionDigits: 2 })}€
-                </div>
-              )}
-              {v?.nivelConfianca && (
-                <div className={`text-[10px] ${isSelected ? 'text-white/60' : (CONFIANCA_COLORS[v.nivelConfianca] ?? 'text-muted-foreground')}`}>
-                  Confiança: {v.nivelConfianca}
-                </div>
-              )}
-              {isSelected && (
-                <div className="text-[10px] text-white/80 font-medium">✓ Seleccionada</div>
-              )}
-              {isMissing && (
-                <div className="text-[10px] text-rose-500 font-medium">Não gerada — regenerar</div>
-              )}
-            </button>
-          )
-        })}
-      </div>
-    </div>
-  )
-}
-
-function getVarianteTotal(estimativa: unknown): number | null {
-  if (!estimativa || typeof estimativa !== 'object') return null
-  const est = estimativa as Record<string, unknown>
-  // Sum item totals directly — AI's total_geral can be arithmetically wrong
-  if (Array.isArray(est.items) && est.items.length > 0) {
-    return (est.items as Array<{ total_item?: unknown }>).reduce((sum, item) => {
-      return sum + (typeof item.total_item === 'number' ? item.total_item : 0)
-    }, 0)
-  }
-  return null
 }
 
 // ── Previous sessions ─────────────────────────────────────────────────────────

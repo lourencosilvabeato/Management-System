@@ -16,7 +16,7 @@ export async function generateEstimate(
         ...messages,
       ],
     },
-    { signal: AbortSignal.timeout(90000) },
+    { signal: AbortSignal.timeout(60000) },
   )
   return response.choices[0]?.message?.content ?? ''
 }
