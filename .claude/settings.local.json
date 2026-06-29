@@ -32,7 +32,9 @@
       "mcp__plugin_figma_figma__use_figma",
       "Bash(git fetch *)",
       "Bash(npx playwright *)",
-      "Bash(git check-ignore *)"
+      "Bash(git check-ignore *)",
+      "Bash(npx tsx *)",
+      "Bash(gh repo *)"
     ]
   }
 }

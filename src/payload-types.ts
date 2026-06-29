@@ -184,7 +184,7 @@ export interface Media {
 export interface Proposal {
   id: number;
   /**
-   * Auto-generated: PROP-YYYY-NNN
+   * Gerado automaticamente: PROP-YYYY-NNN
    */
   numero?: string | null;
   estado: 'Recebida' | 'EmElaboracao' | 'EmOrcamentacao' | 'Enviada' | 'Ganha' | 'Perdida';
@@ -215,7 +215,7 @@ export interface Proposal {
     [k: string]: unknown;
   } | null;
   /**
-   * URL to Figma file — passed as text to the AI prompt
+   * URL do ficheiro Figma — enviado como texto para o prompt da IA
    */
   figmaLink?: string | null;
   ficheirosAnexos?: (number | Media)[] | null;
@@ -237,7 +237,7 @@ export interface Proposal {
   estadoCriativo?: ('Rascunho' | 'EmRevisao' | 'Aprovado') | null;
   maquetes?: (number | Media)[] | null;
   /**
-   * Managed automatically by the AI engine
+   * Gerido automaticamente pelo motor de IA
    */
   sessaoOrcamentacao?:
     | {
@@ -281,6 +281,10 @@ export interface Proposal {
             }[]
           | null;
         varianteSelecionada?: ('Otimista' | 'Equilibrada' | 'Conservadora') | null;
+        /**
+         * Verdadeiro se a IA não respeitou o constraint Otimista < Equilibrada < Conservadora.
+         */
+        variantesOrdemViolada?: boolean | null;
         inputsUsados?:
           | {
               [k: string]: unknown;
@@ -318,7 +322,7 @@ export interface Proposal {
       }[]
     | null;
   /**
-   * Append-only — written by hooks only
+   * Apenas leitura — escrito automaticamente pelos hooks
    */
   activityLog?:
     | {
@@ -397,7 +401,7 @@ export interface ProjectLibrary {
   ano?: number | null;
   descricao?: string | null;
   /**
-   * JSON with items and rubricas — used as AI benchmarking reference
+   * JSON com items e rubricas — utilizado como referência de benchmarking pela IA
    */
   estruturaCustos?:
     | {
@@ -597,6 +601,7 @@ export interface ProposalsSelect<T extends boolean = true> {
               id?: T;
             };
         varianteSelecionada?: T;
+        variantesOrdemViolada?: T;
         inputsUsados?: T;
         id?: T;
       };
