@@ -18,6 +18,7 @@
 #   POSTGRES_PASSWORD              (secured) senha do Postgres containerizado
 #   ANTHROPIC_API_KEY              (secured) chave API Anthropic (Claude)
 #   OPENAI_API_KEY                 (secured) chave API OpenAI (GPT-4o Vision)
+#   FIGMA_API_TOKEN                (secured) token API Figma
 #   CLOUDFLARE_R2_BUCKET           nome do bucket R2
 #   CLOUDFLARE_R2_ACCESS_KEY       (secured) access key R2
 #   CLOUDFLARE_R2_SECRET_KEY       (secured) secret key R2
@@ -89,6 +90,7 @@ definitions:
               printf 'DATABASE_URI=%s\n'             "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/projeto-niu"
               printf 'ANTHROPIC_API_KEY=%s\n'        "${ANTHROPIC_API_KEY}"
               printf 'OPENAI_API_KEY=%s\n'           "${OPENAI_API_KEY}"
+              printf 'FIGMA_API_TOKEN=%s\n'           "${FIGMA_API_TOKEN}"
               printf 'CLOUDFLARE_R2_BUCKET=%s\n'     "${CLOUDFLARE_R2_BUCKET}"
               printf 'CLOUDFLARE_R2_ACCESS_KEY=%s\n' "${CLOUDFLARE_R2_ACCESS_KEY}"
               printf 'CLOUDFLARE_R2_SECRET_KEY=%s\n' "${CLOUDFLARE_R2_SECRET_KEY}"
