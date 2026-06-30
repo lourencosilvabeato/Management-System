@@ -1,43 +1,60 @@
-version: '3'
-
 services:
-  payload:
-    image: node:20-alpine
+  postgres:
+    container_name: projeto-niu-postgres
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      POSTGRES_DB: projeto-niu
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
-      - '3000:3000'
+      - '${POSTGRES_PORT:-5432}:5432'
     volumes:
-      - .:/home/node/app
-      - node_modules:/home/node/app/node_modules
-    working_dir: /home/node/app/
-    command: sh -c "corepack enable && corepack prepare pnpm@latest --activate && pnpm install && pnpm dev"
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U postgres']
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  migrator:
+    container_name: projeto-niu-migrator
+    image: ${ECR_REPOSITORY}:${IMAGE_TAG}
+    restart: 'no'
+    command: ['npx', 'payload', 'migrate', '--force-accept-warning']
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URI: ${DATABASE_URI}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
     depends_on:
-      - mongo
-      # - postgres
-    env_file:
-      - .env
+      postgres:
+        condition: service_healthy
 
-  # Ensure your DATABASE_URL uses 'mongo' as the hostname ie. mongodb://mongo/my-db-name
-  mongo:
-    image: mongo:latest
+  payload:
+    container_name: projeto-niu-payload
+    image: ${ECR_REPOSITORY}:${IMAGE_TAG}
+    restart: always
     ports:
-      - '27017:27017'
-    command:
-      - --storageEngine=wiredTiger
+      - '127.0.0.1:${PORT:-3000}:3000'
+    environment:
+      NODE_ENV: ${NODE_ENV:-production}
+      DATABASE_URI: ${DATABASE_URI}
+      PAYLOAD_SECRET: ${PAYLOAD_SECRET}
+      NEXT_PUBLIC_SERVER_URL: ${NEXT_PUBLIC_SERVER_URL}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      CLOUDFLARE_R2_BUCKET: ${CLOUDFLARE_R2_BUCKET}
+      CLOUDFLARE_R2_ACCESS_KEY: ${CLOUDFLARE_R2_ACCESS_KEY}
+      CLOUDFLARE_R2_SECRET_KEY: ${CLOUDFLARE_R2_SECRET_KEY}
+      CLOUDFLARE_R2_ENDPOINT: ${CLOUDFLARE_R2_ENDPOINT}
+      RESEND_API_KEY: ${RESEND_API_KEY}
     volumes:
-      - data:/data/db
-    logging:
-      driver: none
-
-  # Uncomment the following to use postgres
-  # postgres:
-  #   restart: always
-  #   image: postgres:latest
-  #   volumes:
-  #     - pgdata:/var/lib/postgresql/data
-  #   ports:
-  #     - "5432:5432"
+      - ./media:/app/media
+    depends_on:
+      postgres:
+        condition: service_healthy
+      migrator:
+        condition: service_completed_successfully
 
 volumes:
-  data:
-  # pgdata:
-  node_modules:
+  projeto-niu-pgdata:

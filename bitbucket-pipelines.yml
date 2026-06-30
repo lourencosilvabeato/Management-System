@@ -1,0 +1,136 @@
+# ---------------------------------------------------------------------------
+# Variáveis de repositório (Bitbucket → Repository settings → Variables)
+#
+# Nível de repositório (compartilhadas entre ambientes):
+#   AWS_ACCESS_KEY_ID              (secured)
+#   AWS_SECRET_ACCESS_KEY          (secured)
+#   AWS_DEFAULT_REGION             ex.: eu-west-1
+#   AWS_ACCOUNT_ID                 ex.: 788026934736
+#   EC2_SECURITY_GROUP_ID          sg-xxxxxxxxxxxxxxxxx
+#   EC2_SSH_PRIVATE_KEY            (secured) chave privada SSH em base64
+#
+# Nível de deployment environment - Staging / Production:
+#   EC2_HOST                       IP ou hostname da EC2
+#   PORT                           porta exposta no host (ex.: 3000)
+#   NODE_ENV                       staging | production
+#   NEXT_PUBLIC_SERVER_URL         URL pública ex.: https://niu.exemplo.com
+#   PAYLOAD_SECRET                 (secured) segredo JWT do Payload (mín. 32 chars)
+#   POSTGRES_PASSWORD              (secured) senha do Postgres containerizado
+#   ANTHROPIC_API_KEY              (secured) chave API Anthropic (Claude)
+#   OPENAI_API_KEY                 (secured) chave API OpenAI (GPT-4o Vision)
+#   CLOUDFLARE_R2_BUCKET           nome do bucket R2
+#   CLOUDFLARE_R2_ACCESS_KEY       (secured) access key R2
+#   CLOUDFLARE_R2_SECRET_KEY       (secured) secret key R2
+#   CLOUDFLARE_R2_ENDPOINT         ex.: https://xxx.r2.cloudflarestorage.com
+#   RESEND_API_KEY                 (secured) chave API Resend (email)
+#
+# Pré-requisitos na EC2:
+#   - Docker + Docker Compose v2 instalados
+#   - IAM Role com permissão ecr:GetAuthorizationToken + ecr:BatchGetImage
+#   - Nginx no host fazendo proxy 80/443 → 127.0.0.1:${PORT}
+# ---------------------------------------------------------------------------
+
+image: atlassian/default-image:4
+
+definitions:
+  services:
+    docker:
+      memory: 4096
+
+  steps:
+    - step: &build-push
+        name: "Build & Push Docker - Production"
+        services: [docker]
+        size: 2x
+        script:
+          - export ECR_REPOSITORY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/projeto-niu"
+          - |
+            case "$BITBUCKET_BRANCH" in
+              dev|env__staging) export IMAGE_TAG="staging" ;;
+              *) export IMAGE_TAG="production" ;;
+            esac
+          - curl -fsSL "https://download.docker.com/linux/static/stable/x86_64/docker-27.3.1.tgz" | tar xz --strip-components=1 -C /usr/local/bin docker/docker
+          - curl -sL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip && unzip -q /tmp/awscliv2.zip -d /tmp && /tmp/aws/install --bin-dir /usr/local/bin
+          - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com"
+          - docker build -t "${ECR_REPOSITORY}:${IMAGE_TAG}" .
+          - docker push "${ECR_REPOSITORY}:${IMAGE_TAG}"
+
+    - step: &deploy
+        name: "Deploy - Staging"
+        deployment: Staging
+        script:
+          - export APP_DIR="/home/ec2-user/projeto-niu"
+          - export ECR_REPOSITORY="${AWS_ACCOUNT_ID}.dkr.ecr.${AWS_DEFAULT_REGION}.amazonaws.com/projeto-niu"
+          - |
+            case "$BITBUCKET_BRANCH" in
+              dev|env__staging) export IMAGE_TAG="staging" ;;
+              *) export IMAGE_TAG="production" ;;
+            esac
+          - curl -sL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip && unzip -q /tmp/awscliv2.zip -d /tmp && /tmp/aws/install --bin-dir /usr/local/bin
+          - PIPELINE_IP=$(curl -s https://checkip.amazonaws.com)
+          - echo "$PIPELINE_IP" > /tmp/pipeline_ip.txt
+          - aws ec2 authorize-security-group-ingress --group-id "$EC2_SECURITY_GROUP_ID" --protocol tcp --port 22 --cidr "${PIPELINE_IP}/32"
+          - mkdir -p ~/.ssh && chmod 700 ~/.ssh
+          - |
+            printf '%s' "$EC2_SSH_PRIVATE_KEY" | base64 -d | tr -d '\r' > ~/.ssh/id_rsa
+            chmod 600 ~/.ssh/id_rsa
+            ssh-keygen -y -f ~/.ssh/id_rsa > /dev/null
+          - ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+          - ssh -i ~/.ssh/id_rsa "ec2-user@${EC2_HOST}" "mkdir -p ${APP_DIR}"
+          - |
+            {
+              printf 'ECR_REPOSITORY=%s\n'           "${ECR_REPOSITORY}"
+              printf 'IMAGE_TAG=%s\n'                "${IMAGE_TAG}"
+              printf 'PORT=%s\n'                     "${PORT:-3000}"
+              printf 'NODE_ENV=%s\n'                 "${NODE_ENV:-production}"
+              printf 'NEXT_PUBLIC_SERVER_URL=%s\n'   "${NEXT_PUBLIC_SERVER_URL}"
+              printf 'PAYLOAD_SECRET=%s\n'           "${PAYLOAD_SECRET}"
+              printf 'POSTGRES_PASSWORD=%s\n'        "${POSTGRES_PASSWORD}"
+              printf 'DATABASE_URI=%s\n'             "postgres://postgres:${POSTGRES_PASSWORD}@postgres:5432/projeto-niu"
+              printf 'ANTHROPIC_API_KEY=%s\n'        "${ANTHROPIC_API_KEY}"
+              printf 'OPENAI_API_KEY=%s\n'           "${OPENAI_API_KEY}"
+              printf 'CLOUDFLARE_R2_BUCKET=%s\n'     "${CLOUDFLARE_R2_BUCKET}"
+              printf 'CLOUDFLARE_R2_ACCESS_KEY=%s\n' "${CLOUDFLARE_R2_ACCESS_KEY}"
+              printf 'CLOUDFLARE_R2_SECRET_KEY=%s\n' "${CLOUDFLARE_R2_SECRET_KEY}"
+              printf 'CLOUDFLARE_R2_ENDPOINT=%s\n'   "${CLOUDFLARE_R2_ENDPOINT}"
+              printf 'RESEND_API_KEY=%s\n'           "${RESEND_API_KEY}"
+            } > deploy.env
+          - scp -i ~/.ssh/id_rsa -o StrictHostKeyChecking=no docker-compose.yml deploy.env "ec2-user@${EC2_HOST}:${APP_DIR}/"
+          - |
+            ssh -i ~/.ssh/id_rsa "ec2-user@${EC2_HOST}" \
+              env \
+              APP_DIR="${APP_DIR}" \
+              AWS_ACCESS_KEY_ID="${AWS_ACCESS_KEY_ID}" \
+              AWS_SECRET_ACCESS_KEY="${AWS_SECRET_ACCESS_KEY}" \
+              AWS_SESSION_TOKEN="${AWS_SESSION_TOKEN:-}" \
+              AWS_DEFAULT_REGION="${AWS_DEFAULT_REGION}" \
+              ECR_REPOSITORY="${ECR_REPOSITORY}" \
+              bash -se <<'EOF'
+              set -euo pipefail
+              cd "$APP_DIR"
+              grep -E '^(NEXT_PUBLIC_SERVER_URL|PORT|NODE_ENV)=' deploy.env || true
+              PAYLOAD_SECRET_VALUE="$(awk -F'=' '$1 == "PAYLOAD_SECRET" { print substr($0, index($0, "=") + 1) }' deploy.env)"
+              test -n "$PAYLOAD_SECRET_VALUE" || {
+                echo "PAYLOAD_SECRET is missing from deploy.env"
+                exit 1
+              }
+              mkdir -p "$APP_DIR/media"
+              sudo chown -R 1001:1001 "$APP_DIR/media"
+              aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin "$(echo $ECR_REPOSITORY | cut -d/ -f1)"
+              docker compose -f docker-compose.yml --env-file deploy.env pull
+              docker compose -f docker-compose.yml --env-file deploy.env up -d --no-build --remove-orphans
+              docker image prune -f
+            EOF
+        after-script:
+          - curl -sL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip && unzip -q /tmp/awscliv2.zip -d /tmp && /tmp/aws/install --bin-dir /usr/local/bin
+          - |
+            PIPELINE_IP=$(cat /tmp/pipeline_ip.txt 2>/dev/null || true)
+            if [ -n "$PIPELINE_IP" ]; then
+              aws ec2 revoke-security-group-ingress --group-id "$EC2_SECURITY_GROUP_ID" --protocol tcp --port 22 --cidr "${PIPELINE_IP}/32" || true
+            fi
+
+pipelines:
+  branches:
+    main:
+      - step: *build-push
+      - step: *deploy
