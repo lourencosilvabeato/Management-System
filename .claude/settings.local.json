@@ -34,7 +34,8 @@
       "Bash(npx playwright *)",
       "Bash(git check-ignore *)",
       "Bash(npx tsx *)",
-      "Bash(gh repo *)"
+      "Bash(gh repo *)",
+      "Bash(npm --version)"
     ]
   }
 }
