@@ -1,8 +1,6 @@
 'use client'
 
-import Image from 'next/image'
 import Link from 'next/link'
-import logoSrc from '@/assets/logo.jpg'
 
 interface Props {
   currentUser: {
@@ -49,13 +47,27 @@ export function Sidebar({ currentUser }: Props) {
           gap: 14,
         }}
       >
-        <Image
-          src={logoSrc}
-          alt="Logo"
-          width={80}
-          height={80}
-          style={{ borderRadius: 4, flexShrink: 0 }}
-        />
+        <div
+          aria-label="NIU"
+          style={{
+            width: 80,
+            height: 80,
+            borderRadius: 4,
+            flexShrink: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            border: '1px solid rgba(255,255,255,0.18)',
+            background: '#ffffff',
+            color: '#000000',
+            fontFamily: "'Montserrat', sans-serif",
+            fontSize: '1.125rem',
+            fontWeight: 800,
+            letterSpacing: '0.08em',
+          }}
+        >
+          NIU
+        </div>
         <span
           style={{
             fontFamily: "'Montserrat', sans-serif",
