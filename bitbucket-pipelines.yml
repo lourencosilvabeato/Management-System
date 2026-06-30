@@ -131,6 +131,6 @@ definitions:
 
 pipelines:
   branches:
-    main:
+    dev:
       - step: *build-push
       - step: *deploy
