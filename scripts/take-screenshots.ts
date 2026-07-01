@@ -5,6 +5,9 @@ import * as fs from 'fs'
 const BASE = 'http://localhost:3000'
 const OUT = path.join(process.cwd(), 'docs/screenshots')
 
+// The proposal used for all single-proposal screenshots
+const DEMO_PROPOSAL = 'Stand Expo Tech 2026'
+
 async function main() {
   fs.mkdirSync(OUT, { recursive: true })
 
@@ -32,56 +35,59 @@ async function main() {
   await page.screenshot({ path: `${OUT}/payload-admin.png` })
   console.log('✓ payload-admin.png')
 
-  // ── Helper: open drawer for a specific proposal estado ──────────────────────
-  const estadoBadgeText = (estado: string): string => ({
-    Recebida: 'Recebida',
-    EmElaboracao: 'Em Elaboração',
-    EmOrcamentacao: 'Em Orçamentação',
-    Enviada: 'Enviada',
-    Ganha: 'Ganha',
-    Perdida: 'Perdida',
-  }[estado] ?? estado)
-
-  const openProposalByEstado = async (estado: string): Promise<boolean> => {
+  // ── Helper: go to propostas and wait for table ───────────────────────────────
+  const goToList = async () => {
     await page.goto(`${BASE}/propostas`)
     await page.waitForLoadState('networkidle')
-    // Wait for TanStack Query to load data
     await page.waitForSelector('text=PROP-', { timeout: 15000 })
+  }
+
+  // ── Helper: open DEMO_PROPOSAL drawer ───────────────────────────────────────
+  const openDemoProposal = async () => {
+    await goToList()
     const rows = page.locator('table tbody tr')
     const count = await rows.count()
-    const label = estadoBadgeText(estado)
     for (let i = 0; i < count; i++) {
       const row = rows.nth(i)
       const text = await row.textContent()
-      if (text?.includes(label)) {
+      if (text?.includes(DEMO_PROPOSAL)) {
         await row.click()
         await page.waitForSelector('[role="dialog"]', { timeout: 5000 })
         await page.waitForTimeout(500)
-        return true
+        return
       }
     }
-    return false
+    throw new Error(`Proposal "${DEMO_PROPOSAL}" not found in table`)
+  }
+
+  // ── Helper: scroll the drawer's overflow container ──────────────────────────
+  const scrollDrawer = async (position: 'top' | 'bottom') => {
+    await page.evaluate((pos) => {
+      // The dialog content div is the scroll container
+      const container =
+        document.querySelector('[role="dialog"] [data-radix-scroll-area-viewport]') ??
+        document.querySelector('[role="dialog"] .overflow-y-auto') ??
+        document.querySelector('[role="dialog"] > div > div')
+      if (!container) return
+      if (pos === 'top') container.scrollTop = 0
+      else container.scrollTop = container.scrollHeight
+    }, position)
+    await page.waitForTimeout(300)
   }
 
   // ── 4. Proposals list ───────────────────────────────────────────────────────
-  await page.goto(`${BASE}/propostas`)
-  await page.waitForLoadState('networkidle')
-  await page.waitForSelector('text=PROP-', { timeout: 15000 })
+  await goToList()
   await page.screenshot({ path: `${OUT}/proposals-list.png` })
   console.log('✓ proposals-list.png')
 
-  // ── 5. Proposal drawer (dados tab) ──────────────────────────────────────────
-  await openProposalByEstado('EmElaboracao')
+  // ── 5. Proposal drawer — dados base tab ─────────────────────────────────────
+  await openDemoProposal()
+  await scrollDrawer('top')
   await page.screenshot({ path: `${OUT}/proposal-drawer.png` })
   console.log('✓ proposal-drawer.png')
 
   // ── 6. State selector ───────────────────────────────────────────────────────
-  // Scroll down inside the drawer to where StateSelector renders
-  await page.evaluate(() => {
-    const btn = Array.from(document.querySelectorAll('button')).find(b => b.textContent?.includes('Avançar') || b.textContent?.includes('Iniciar'))
-    btn?.scrollIntoView({ behavior: 'instant', block: 'center' })
-  })
-  await page.waitForTimeout(300)
+  await scrollDrawer('bottom')
   await page.screenshot({ path: `${OUT}/state-selector.png` })
   console.log('✓ state-selector.png')
 
@@ -90,9 +96,10 @@ async function main() {
   await page.waitForTimeout(400)
 
   // ── 7. Creative zone tab ────────────────────────────────────────────────────
-  await openProposalByEstado('EmElaboracao')
+  await openDemoProposal()
   await page.click('button[role="tab"]:has-text("Criativa")')
   await page.waitForTimeout(600)
+  await scrollDrawer('top')
   await page.screenshot({ path: `${OUT}/creative-zone.png` })
   console.log('✓ creative-zone.png')
 
@@ -100,40 +107,30 @@ async function main() {
   await page.keyboard.press('Escape')
   await page.waitForTimeout(400)
 
-  // ── 8. Budgeting tab — wait for estimate to be fully rendered ────────────────
-  const opened = await openProposalByEstado('EmOrcamentacao')
-  if (opened) {
-    await page.click('button[role="tab"]:has-text("Orçamentação")')
-    // Wait for the estimate to appear — could be loading from AI or already present
-    console.log('  Waiting for estimate to load...')
-    await page.waitForFunction(
-      () => {
-        // Check for any visible monetary value (€) in the tab content
-        const dialog = document.querySelector('[role="dialog"]')
-        return dialog && (
-          dialog.textContent?.includes('Total Geral') ||
-          dialog.textContent?.includes('total_geral') ||
-          dialog.textContent?.includes('Total:') ||
-          (dialog.querySelector('.font-mono') !== null)
-        )
-      },
-      { timeout: 300000 },
-    ).catch(() => console.warn('  Warning: estimate may not be fully loaded'))
-    await page.waitForTimeout(1000)
-    await page.screenshot({ path: `${OUT}/budgeting-tab.png` })
-    console.log('✓ budgeting-tab.png')
+  // ── 8. Budgeting tab — TOP: confiança badge + abordagem técnica ──────────────
+  await openDemoProposal()
+  await page.click('button[role="tab"]:has-text("Orçamentação")')
 
-    // ── 9. Estimate chat ─────────────────────────────────────────────────────
-    await page.evaluate(() => {
-      const textarea = document.querySelector('textarea')
-      textarea?.scrollIntoView({ behavior: 'instant', block: 'center' })
-    })
-    await page.waitForTimeout(400)
-    await page.screenshot({ path: `${OUT}/estimate-chat.png` })
-    console.log('✓ estimate-chat.png')
-  } else {
-    console.warn('⚠ No EmOrcamentacao proposal found — budgeting screenshots skipped')
-  }
+  // Wait for estimate to be fully rendered
+  console.log('  Waiting for estimate to load...')
+  await page.waitForFunction(
+    () => {
+      const dialog = document.querySelector('[role="dialog"]')
+      return dialog?.textContent?.includes('Confiança') || dialog?.textContent?.includes('Total Geral')
+    },
+    { timeout: 300000 },
+  ).catch(() => console.warn('  Warning: estimate may not have loaded fully'))
+
+  await page.waitForTimeout(800)
+  await scrollDrawer('top')
+  await page.screenshot({ path: `${OUT}/budgeting-tab.png` })
+  console.log('✓ budgeting-tab.png')
+
+  // ── 9. Estimate chat — BOTTOM: last estimate items + chat input ──────────────
+  await scrollDrawer('bottom')
+  await page.waitForTimeout(300)
+  await page.screenshot({ path: `${OUT}/estimate-chat.png` })
+  console.log('✓ estimate-chat.png')
 
   await browser.close()
   console.log('\nAll screenshots saved to docs/screenshots/')
