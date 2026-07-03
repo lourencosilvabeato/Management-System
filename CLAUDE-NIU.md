@@ -74,23 +74,23 @@ The .env.local file must never go to the repository — confirm it is in .gitign
 
 ## AI integration — live with OpenAI
 
-Both AI functions use OpenAI GPT-4o with `temperature: 0.2`.
-Anthropic SDK is not used — do not introduce it.
+Both AI functions use OpenAI **GPT-4o mini** with `temperature: 0.1`.
+Anthropic SDK is installed as a dependency but is not used — do not introduce it.
 
-- `src/lib/ai/claudeClient.ts` — GPT-4o for estimate generation (text)
-- `src/lib/ai/openaiClient.ts` — GPT-4o Vision for image analysis (maquetes, ficheiros, Figma frames)
+- `src/lib/ai/claudeClient.ts` — GPT-4o mini for estimate generation (text + structured JSON output)
+- `src/lib/ai/openaiClient.ts` — GPT-4o mini for image analysis (maquetes, attachments, Figma frames)
 
-OPENAI_API_KEY must be set in `.env.local`. ANTHROPIC_API_KEY is unused — leave it blank.
+OPENAI_API_KEY must be set in `.env.local`.
 
 ---
 
 ## Tech stack — no exceptions
 
-- **Framework:** Next.js 15 with App Router and strict TypeScript
+- **Framework:** Next.js 16 with App Router and strict TypeScript
 - **CMS / Backend:** Payload CMS 3 — runs inside Next.js, not a separate server
 - **Database:** PostgreSQL — managed by Payload, never manipulated directly
 - **Files:** Cloudflare R2 — via official Payload plugin (@payloadcms/storage-s3) — not yet configured, files stored locally in development
-- **AI — all:** OpenAI GPT-4o (text + vision) via official OpenAI SDK
+- **AI — all:** OpenAI GPT-4o mini (text + vision) via official OpenAI SDK
 - **UI:** Shadcn/UI + Tailwind CSS
 - **Server state:** TanStack Query (react-query) for cache and refetch in the browser
 - **Email:** Resend with React Email for templates
@@ -130,7 +130,7 @@ PostgreSQL
 - All API errors are handled — never leave silent errors
 - activityLog is always append-only — never update or delete existing entries
 - Environment variables always via process.env — never hardcoded
-- The Claude system prompt lives in src/lib/ai/prompts/estimateSystem.ts — never inline in code
+- The AI system prompt lives in src/lib/ai/prompts/estimateSystem.ts — never inline in code
 - .env.local must never go to git — verify .gitignore before the first commit
 
 ---
@@ -237,17 +237,20 @@ Auto-generated in a beforeChange hook — never editable by the user.
 
 ## AI engine — full architecture
 
-### The two models and their roles
+### The two roles of GPT-4o mini
 
-GPT-4o Vision: receives mockup images (base64).
-Returns text description — apparent dimensions, visible materials, structural elements, colours.
-Does not generate budgets. Only transforms images into text.
+**Image analysis** (`openaiClient.ts`): receives mockup images and Figma frames as base64.
+Returns a text description — apparent dimensions, visible materials, structural elements, colours.
+Does not generate budgets. Only transforms images into text for the estimate prompt.
 
-Claude (claude-sonnet-4-20250514): receives all context as text and generates the budget.
-Inputs: briefing + creative memory + image description (from GPT-4o) + materials + machines + rates.
+**Estimate generation** (`claudeClient.ts`): receives all context as text and generates the budget.
+Inputs: briefing + creative memory + image description + materials + machines + rates + project library.
 Output: structured JSON as per schema below.
 
-### Claude JSON output schema
+Note: GPT-4o (full) was tested in early iterations and Claude was considered but discarded for cost reasons.
+GPT-4o mini was selected as the final model for both roles — adequate quality at significantly lower cost.
+
+### AI JSON output schema
 
 ```json
 {
@@ -277,17 +280,17 @@ Output: structured JSON as per schema below.
 }
 ```
 
-Claude returns ONLY the JSON — no text before, no markdown, no backticks.
+The model returns ONLY the JSON — no text before, no markdown, no backticks.
 If parse fails, retry once with a re-prompt. If it fails again, return an error to the user.
 
 ### Iterative chat
 
-The budgeting session is a Claude conversation with persistent history.
+The budgeting session is a persistent conversation with GPT-4o mini.
 History is stored in conversaIA of the active session in the proposal.
 
-First generation: buildPrompt builds initial message → sends to Claude → saves to conversaIA.
-Follow-up: user writes message → appends to conversaIA → resends full history to Claude.
-Claude responds with updated JSON → replaces estimativaAtual in the session.
+First generation: buildPrompt builds initial message → sends to GPT-4o mini → saves to conversaIA.
+Follow-up: user writes message → appends to conversaIA → resends full history to GPT-4o mini.
+Model responds with updated JSON → replaces estimativaAtual in the session.
 History is never truncated within a session.
 A new session starts from scratch when the proposal re-enters EmOrcamentacao.
 
@@ -297,9 +300,9 @@ A new session starts from scratch when the proposal re-enters EmOrcamentacao.
 2. Creates new sessaoOrcamentacao with unique uuid
 3. Fetches from DB: materials (ativo=true), machines (disponivel=true), internalRates
 4. Downloads mockups from R2 → converts to base64
-5. If there are mockups: calls GPT-4o Vision → gets text description
-6. Builds initial message via buildPrompt
-7. Calls Claude with system prompt + initial message
+5. If there are mockups or Figma link: calls GPT-4o mini vision → gets text description
+6. Builds initial message via buildPrompt (includes project library as benchmarks)
+7. Calls GPT-4o mini with system prompt + initial message
 8. Parses returned JSON
 9. Saves to session: conversaIA, estimativaAtual, abordagemTecnica, nivelConfianca
 10. activityLog: "AI estimate generated — confidence: [level]"
@@ -308,7 +311,7 @@ A new session starts from scratch when the proposal re-enters EmOrcamentacao.
 
 - Timeout (45 seconds): cancels request, saves error to session, notifies frontend
 - Invalid JSON: retries once with re-prompt. If it fails again, returns error to user
-- GPT-4o fails: continues without images, notes in prompt that images are unavailable
+- Vision analysis fails: continues without images, notes in prompt that images are unavailable
 - Empty knowledge base: continues with warning — confidence level forced to Baixo
 
 ---
@@ -326,7 +329,7 @@ Records in activityLog. Returns updated proposal.
 ### POST /api/proposals/[id]/chat
 Body: { mensagem: string }
 Validates that estado is EmOrcamentacao and active session exists.
-Appends to conversaIA, calls Claude with full history, updates estimativaAtual.
+Appends to conversaIA, calls GPT-4o mini with full history, updates estimativaAtual.
 Returns: { estimativaAtual, abordagemTecnica, nivelConfianca, nivelConfiancaJustificacao, conversaIA }
 
 ### POST /api/proposals/[id]/estimate/accept
@@ -375,7 +378,7 @@ Append-only. Any attempt to modify or delete existing entries is rejected.
 - The AI estimate is always a suggestion — the user can edit any field
 - margemCalculada = (valorVendaFinal - totalCustos) / valorVendaFinal × 100
 - Each state change to EmOrcamentacao creates a new session — never reuses the previous one
-- figmaLink is sent as text in the prompt — no Figma API integration
+- figmaLink is fetched via the Figma REST API (`GET /v1/files/:key`); top-level frames are exported as PNG and analyzed by GPT-4o mini vision; text annotations are also extracted and injected into the prompt
 
 ---
 
@@ -447,8 +450,8 @@ src/
 ```
 DATABASE_URI                — PostgreSQL connection string
 PAYLOAD_SECRET              — Payload secret (minimum 32 characters)
-ANTHROPIC_API_KEY           — Claude API
-OPENAI_API_KEY              — GPT-4o Vision
+OPENAI_API_KEY              — GPT-4o mini (text + vision)
+FIGMA_API_TOKEN             — Figma REST API access token (for figmaLink analysis)
 CLOUDFLARE_R2_BUCKET        — R2 bucket name
 CLOUDFLARE_R2_ACCESS_KEY    — R2 access key
 CLOUDFLARE_R2_SECRET_KEY    — R2 secret key
