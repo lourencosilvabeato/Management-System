@@ -16,6 +16,13 @@ function isPdfMime(mimeType: string | null | undefined): boolean {
   return mimeType === 'application/pdf'
 }
 
+function resolveMediaUrl(url: string): string {
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+
+  const base = (process.env.NEXT_PUBLIC_SERVER_URL ?? 'http://localhost:3000').replace(/\/$/, '')
+  return `${base}${url.startsWith('/') ? url : `/${url}`}`
+}
+
 async function extractPdfText(buffer: ArrayBuffer): Promise<string> {
   try {
     const { PDFParse } = await import('pdf-parse')
@@ -39,11 +46,12 @@ export async function readAttachments(
     if (typeof file === 'number') continue
     const media = file as Media
     if (!media.url) continue
+    const mediaUrl = resolveMediaUrl(media.url)
 
     try {
-      const res = await fetch(media.url)
+      const res = await fetch(mediaUrl)
       if (!res.ok) {
-        console.warn(`[readAttachments] Failed to fetch: ${media.url}`)
+        console.warn(`[readAttachments] Failed to fetch: ${mediaUrl}`)
         continue
       }
       const buffer = await res.arrayBuffer()
@@ -56,7 +64,7 @@ export async function readAttachments(
         result.base64Images.push(base64)
       }
     } catch (err) {
-      console.warn(`[readAttachments] Error processing ${media.url}:`, err)
+      console.warn(`[readAttachments] Error processing ${mediaUrl}:`, err)
     }
   }
 
